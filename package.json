@@ -1,0 +1,14 @@
+{
+  "name": "ascendants-subgraph",
+  "version": "0.0.1",
+  "description": "Subgraph for Ascendants",
+  "scripts": {
+    "codegen": "graph codegen",
+    "build": "graph build",
+    "deploy": "graph deploy --node https://api.studio.thegraph.com/deploy/ YOUR_GITHUB_USERNAME/ascendants-subgraph"
+  },
+  "dependencies": {
+    "@graphprotocol/graph-cli": "^0.96.0",
+    "@graphprotocol/graph-ts": "^0.28.0"
+  }
+}
