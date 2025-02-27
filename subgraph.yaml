@@ -1,0 +1,28 @@
+specVersion: 0.0.2
+description: Subgraph for Ascendants (Indexing events from Adrian Gallery)
+repository: "https://github.com/YOUR_GITHUB_USERNAME/ascendants-subgraph"
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum/contract
+    name: AscendantsDapp
+    network: base
+    source:
+      address: "0xbc864d967A2c72552Dc0B692e2B71F4b50a6D449"
+      abi: AscendantsDapp
+      startBlock: 26950913
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.5
+      language: wasm/assemblyscript
+      entities:
+        - Transfer
+      abis:
+        - name: AscendantsDapp
+          file: ./abis/AscendantsDapp.json
+      eventHandlers:
+        - event: TransferSingle(indexed address,indexed address,indexed address,uint256,uint256)
+          handler: handleTransferSingle
+        - event: TransferBatch(indexed address,indexed address,indexed address,uint256[],uint256[])
+          handler: handleTransferBatch
+      file: ./src/mapping.ts
