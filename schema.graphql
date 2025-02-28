@@ -1,25 +1,4 @@
-type Transfer @entity {
-  id: ID!
-  from: Bytes!
-  to: Bytes!
-  tokenId: BigInt!
-  value: BigInt!
-  timestamp: BigInt!
-}
-
-type Holder @entity {
-  id: ID!
-  address: Bytes!
-  tokenBalances: [TokenBalance!]! @derivedFrom(field: "holder")
-}
-
-type TokenBalance @entity {
-  id: ID!
-  tokenId: BigInt!
-  holder: Holder!
-  balance: BigInt!
-}
-
+# Entidades para eventos inmutables (ya existentes)
 type ApprovalForAll @entity(immutable: true) {
   id: Bytes!
   account: Bytes! # address
@@ -70,4 +49,27 @@ type URI @entity(immutable: true) {
   blockNumber: BigInt!
   blockTimestamp: BigInt!
   transactionHash: Bytes!
+}
+
+# Entidades personalizadas para el estado actual (que queremos consultar)
+type Transfer @entity {
+  id: ID!
+  from: Bytes!
+  to: Bytes!
+  tokenId: BigInt!
+  value: BigInt!
+  timestamp: BigInt!
+}
+
+type Holder @entity {
+  id: ID!
+  address: Bytes!
+  tokenBalances: [TokenBalance!]! @derivedFrom(field: "holder")
+}
+
+type TokenBalance @entity {
+  id: ID!
+  tokenId: BigInt!
+  holder: Holder!
+  balance: BigInt!
 }
