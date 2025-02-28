@@ -5,7 +5,7 @@
   "scripts": {
     "codegen": "graph codegen",
     "build": "graph build",
-    "deploy": "graph deploy --node https://api.studio.thegraph.com/deploy/ YOUR_GITHUB_USERNAME/ascendants-subgraph"
+    "deploy": "graph deploy --node https://api.studio.thegraph.com/deploy/ adriangallery/ascendants"
   },
   "dependencies": {
     "@graphprotocol/graph-cli": "^0.96.0",
