@@ -20,7 +20,8 @@ function getOrCreateTokenBalance(holder: Holder, tokenId: BigInt): TokenBalance 
   if (tokenBalance == null) {
     tokenBalance = new TokenBalance(balanceId);
     tokenBalance.tokenId = tokenId;
-    tokenBalance.holder = holder;
+    // Asignamos el ID del holder, ya que en el schema se espera un string.
+    tokenBalance.holder = holder.id;
     tokenBalance.balance = BigInt.fromI32(0);
   }
   return tokenBalance;
@@ -40,6 +41,8 @@ function updateTokenBalance(holder: Holder, tokenId: BigInt, value: BigInt, incr
 // Manejador para TransferSingle: se procesa cada evento individual.
 export function handleTransferSingle(event: TransferSingle): void {
   let id = event.transaction.hash.toHex() + "-" + event.logIndex.toString();
+  
+  // Crear la entidad Transfer para indexar el evento.
   let transfer = new Transfer(id);
   transfer.from = event.params.from;
   transfer.to = event.params.to;
@@ -52,9 +55,9 @@ export function handleTransferSingle(event: TransferSingle): void {
   let fromHolder = getOrCreateHolder(event.params.from);
   let toHolder = getOrCreateHolder(event.params.to);
 
-  // Disminuye el balance del emisor.
+  // Disminuir el balance del emisor.
   updateTokenBalance(fromHolder, event.params.id, event.params.value, false);
-  // Aumenta el balance del receptor.
+  // Aumentar el balance del receptor.
   updateTokenBalance(toHolder, event.params.id, event.params.value, true);
 }
 
@@ -62,6 +65,7 @@ export function handleTransferSingle(event: TransferSingle): void {
 export function handleTransferBatch(event: TransferBatch): void {
   for (let i = 0; i < event.params.ids.length; i++) {
     let id = event.transaction.hash.toHex() + "-" + event.logIndex.toString() + "-" + i.toString();
+    
     let transfer = new Transfer(id);
     transfer.from = event.params.from;
     transfer.to = event.params.to;
