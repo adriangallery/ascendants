@@ -1,6 +1,6 @@
 specVersion: 0.0.2
 description: Subgraph for Ascendants (Indexing events from Adrian Gallery)
-repository: "https://github.com/YOUR_GITHUB_USERNAME/ascendants-subgraph"
+repository: "https://github.com/adriangallery/ascendants"  # Actualiza este valor si es necesario
 schema:
   file: ./schema.graphql
 dataSources:
@@ -8,15 +8,17 @@ dataSources:
     name: AscendantsDapp
     network: base
     source:
-      address: "0xbc864d967A2c72552Dc0B692e2B71F4b50a6D449"
-      abi: AscendantsDapp
-      startBlock: 26950913
+      address: "0xbc864d967A2c72552Dc0B692e2B71F4b50a6D449"  # Dirección del contrato
+      abi: AscendantsDapp  # Nombre del ABI (debe coincidir con el nombre en el archivo en abis/)
+      startBlock: 26950913  # Bloque de inicio para indexar los eventos
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.5
       language: wasm/assemblyscript
       entities:
         - Transfer
+        - Holder           # Si agregas nuevas entidades en el schema
+        - TokenBalance     # para balances, si extiendes el schema
       abis:
         - name: AscendantsDapp
           file: ./abis/AscendantsDapp.json
