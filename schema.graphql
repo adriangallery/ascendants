@@ -1,8 +1,12 @@
-type Transfer @entity {
+type Holder @entity {
   id: ID!
-  from: Bytes!
-  to: Bytes!
+  address: Bytes!
+  tokenBalances: [TokenBalance!]! @derivedFrom(field: "holder")
+}
+
+type TokenBalance @entity {
+  id: ID!
   tokenId: BigInt!
-  value: BigInt!
-  timestamp: BigInt!
+  holder: Holder!
+  balance: BigInt!
 }
