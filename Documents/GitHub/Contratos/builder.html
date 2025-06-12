@@ -1,0 +1,1374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AdrianLab Trait Builder</title>
+    <script src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 56px;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #00ff88, #00aaff, #ff0088);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-size: 200% 200%;
+            animation: gradient 3s ease infinite;
+        }
+
+        @keyframes gradient {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .subtitle {
+            color: #888;
+            font-size: 20px;
+            margin-bottom: 20px;
+        }
+
+        .wallet-section {
+            background: rgba(20, 20, 20, 0.8);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+            text-align: center;
+        }
+
+        .connect-btn {
+            padding: 16px 32px;
+            font-size: 18px;
+            font-weight: 600;
+            background: linear-gradient(45deg, #ff0088, #ff8800);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .connect-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(255, 0, 136, 0.3);
+        }
+
+        .wallet-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .wallet-address {
+            font-family: monospace;
+            font-size: 16px;
+            color: #00ff88;
+            background: rgba(0, 255, 136, 0.1);
+            padding: 8px 16px;
+            border-radius: 8px;
+        }
+
+        .balance-info {
+            display: flex;
+            gap: 30px;
+        }
+
+        .balance-item {
+            text-align: center;
+        }
+
+        .balance-label {
+            color: #888;
+            font-size: 14px;
+        }
+
+        .balance-value {
+            color: #00aaff;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .builder-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            gap: 30px;
+            margin: 30px 0;
+        }
+
+        .section {
+            background: rgba(20, 20, 20, 0.8);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            backdrop-filter: blur(10px);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 15px;
+        }
+
+        .section-title {
+            font-size: 24px;
+            color: #00ff88;
+            margin: 0;
+        }
+
+        .token-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .token-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            border: 2px solid transparent;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .token-card:hover {
+            border-color: rgba(0, 255, 136, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .token-card.selected {
+            border-color: #00ff88;
+            background: rgba(0, 255, 136, 0.1);
+        }
+
+        .token-id {
+            font-size: 18px;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 10px;
+        }
+
+        .token-skin {
+            color: #888;
+            font-size: 14px;
+        }
+
+        .equipped-traits {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+
+        .equipped-trait {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background: rgba(0, 170, 255, 0.1);
+            border-radius: 8px;
+            margin: 5px 0;
+            font-size: 12px;
+        }
+
+        .trait-category {
+            color: #00aaff;
+            font-weight: 600;
+        }
+
+        .trait-name {
+            color: #fff;
+        }
+
+        .unequip-btn {
+            background: rgba(255, 0, 136, 0.2);
+            border: 1px solid rgba(255, 0, 136, 0.3);
+            color: #ff0088;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .unequip-btn:hover {
+            background: rgba(255, 0, 136, 0.3);
+        }
+
+        .traits-container {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .category-section {
+            margin-bottom: 30px;
+        }
+
+        .category-title {
+            color: #00aaff;
+            font-size: 18px;
+            margin-bottom: 15px;
+            padding: 10px 15px;
+            background: rgba(0, 170, 255, 0.1);
+            border-radius: 10px;
+            border-left: 4px solid #00aaff;
+        }
+
+        .trait-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .trait-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            border: 2px solid transparent;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .trait-card:hover {
+            border-color: rgba(0, 255, 136, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .trait-card.selected {
+            border-color: #00ff88;
+            background: rgba(0, 255, 136, 0.1);
+        }
+
+        .trait-card.equipped {
+            border-color: #00aaff;
+            background: rgba(0, 170, 255, 0.1);
+            opacity: 0.7;
+        }
+
+        .trait-card.temporary {
+            border-left: 4px solid #ff8800;
+        }
+
+        .trait-card.temporary::after {
+            content: "TEMPORARY";
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: #ff8800;
+            color: #000;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .trait-info {
+            text-align: center;
+        }
+
+        .trait-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 8px;
+        }
+
+        .trait-balance {
+            color: #00ff88;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .trait-meta {
+            color: #888;
+            font-size: 12px;
+        }
+
+        .preview-section {
+            text-align: center;
+        }
+
+        .preview-container {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            min-height: 300px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .preview-placeholder {
+            color: #888;
+            font-size: 18px;
+            text-align: center;
+        }
+
+        .token-preview {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+
+        .equipped-summary {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .summary-title {
+            color: #00aaff;
+            font-size: 18px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+        }
+
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .action-btn {
+            padding: 14px 20px;
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #00ff88, #00aaff);
+            color: #000;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 255, 136, 0.3);
+        }
+
+        .btn-warning {
+            background: linear-gradient(45deg, #ff8800, #ffaa00);
+            color: #000;
+        }
+
+        .btn-warning:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(255, 136, 0, 0.3);
+        }
+
+        .btn-danger {
+            background: linear-gradient(45deg, #ff0088, #ff4400);
+            color: #fff;
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(255, 0, 136, 0.3);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        .status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            max-width: 400px;
+            padding: 20px;
+            border-radius: 12px;
+            z-index: 1000;
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .status.success {
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            color: #00ff88;
+        }
+
+        .status.error {
+            background: rgba(255, 0, 0, 0.1);
+            border: 1px solid rgba(255, 0, 0, 0.3);
+            color: #ff4444;
+        }
+
+        .status.info {
+            background: rgba(0, 170, 255, 0.1);
+            border: 1px solid rgba(0, 170, 255, 0.3);
+            color: #00aaff;
+        }
+
+        .status.warning {
+            background: rgba(255, 136, 0, 0.1);
+            border: 1px solid rgba(255, 136, 0, 0.3);
+            color: #ff8800;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #00ff88;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .tx-link {
+            color: #00aaff;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .tx-link:hover {
+            text-decoration: underline;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #888;
+        }
+
+        .empty-state h3 {
+            font-size: 20px;
+            margin-bottom: 10px;
+            color: #00aaff;
+        }
+
+        .refresh-btn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .refresh-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .scrollbar {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(0, 255, 136, 0.3) rgba(255, 255, 255, 0.1);
+        }
+
+        .scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .scrollbar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        .scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(0, 255, 136, 0.3);
+            border-radius: 4px;
+        }
+
+        .scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 255, 136, 0.5);
+        }
+
+        .confirmation-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        .modal-content {
+            background: rgba(20, 20, 20, 0.95);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 40px;
+            max-width: 500px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .modal-title {
+            color: #ff8800;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        .modal-text {
+            color: #fff;
+            font-size: 16px;
+            line-height: 1.5;
+            margin-bottom: 30px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .modal-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .modal-btn.confirm {
+            background: linear-gradient(45deg, #ff8800, #ffaa00);
+            color: #000;
+        }
+
+        .modal-btn.cancel {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>AdrianLab</h1>
+            <p class="subtitle">Trait Builder & Character Customization</p>
+        </div>
+
+        <div class="wallet-section">
+            <div id="connect-section">
+                <button class="connect-btn" onclick="connectWallet()">Connect Wallet</button>
+            </div>
+            <div id="wallet-connected" style="display: none;">
+                <div class="wallet-info">
+                    <div class="wallet-address" id="wallet-address"></div>
+                    <div class="balance-info">
+                        <div class="balance-item">
+                            <div class="balance-label">AdrianZERO Tokens</div>
+                            <div class="balance-value" id="token-balance">-</div>
+                        </div>
+                        <div class="balance-item">
+                            <div class="balance-label">Total Traits</div>
+                            <div class="balance-value" id="trait-balance">-</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="builder-grid">
+            <!-- Tokens Section -->
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">Your AdrianZERO</h2>
+                    <button class="refresh-btn" onclick="loadUserTokens()">↻</button>
+                </div>
+                <div class="token-grid scrollbar" id="token-grid">
+                    <div class="empty-state">
+                        <h3>Connect wallet to view your tokens</h3>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Traits Section -->
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">Available Traits</h2>
+                    <button class="refresh-btn" onclick="loadAvailableTraits()">↻</button>
+                </div>
+                <div class="traits-container scrollbar" id="traits-container">
+                    <div class="empty-state">
+                        <h3>Connect wallet to view your traits</h3>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Preview Section -->
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">Character Preview</h2>
+                </div>
+                <div class="preview-container" id="preview-container">
+                    <div class="preview-placeholder">
+                        Select an AdrianZERO token to preview
+                    </div>
+                </div>
+                
+                <div class="equipped-summary" id="equipped-summary" style="display: none;">
+                    <div class="summary-title">Currently Equipped</div>
+                    <div id="equipped-list"></div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="action-btn btn-primary" id="equip-btn" onclick="equipSelectedTrait()" disabled>
+                        Equip Selected Trait
+                    </button>
+                    <button class="action-btn btn-danger" onclick="unequipAllTraits()" disabled id="unequip-all-btn">
+                        Unequip All Traits
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal for Temporary Traits -->
+    <div class="confirmation-modal" id="temp-trait-modal">
+        <div class="modal-content">
+            <div class="modal-title">⚠️ Temporary Trait Warning</div>
+            <div class="modal-text" id="modal-text">
+                This trait is temporary and will be consumed when equipped. Are you sure you want to continue?
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn confirm" onclick="confirmEquipTempTrait()">Equip Anyway</button>
+                <button class="modal-btn cancel" onclick="cancelEquipTempTrait()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="status" class="status"></div>
+
+    <script>
+        // ===== CORRECTED CONTRACT ADDRESSES =====
+        const ADRIANLAB_CORE = "0x6e369bf0e4e0c106192d606fb6d85836d684da75"; // AdrianLabCore
+        const TRAITS_CORE = "0xb72be829f06a6c5baf99cdae204ffd99ea4a6c9a";     // AdrianTraitsCore
+        const TRAITS_EXTENSIONS = "0x756e1a4fC47cbDe7d503b6c1B0353aDa94B41630"; // AdrianTraitsExtensions
+
+        // ===== COMPLETE ABIs =====
+        const ADRIANLAB_CORE_ABI = [
+            "function balanceOf(address owner) view returns (uint256)",
+            "function tokenOfOwnerByIndex(address owner, uint256 index) view returns (uint256)",
+            "function ownerOf(uint256 tokenId) view returns (address)",
+            "function exists(uint256 tokenId) view returns (bool)"
+        ];
+
+        const TRAITS_CORE_ABI = [
+            "function balanceOf(address account, uint256 id) view returns (uint256)",
+            "function getName(uint256 assetId) view returns (string)",
+            "function getCategory(uint256 assetId) view returns (string)",
+            "function getTraitInfo(uint256 assetId) view returns (string category, bool isTemp)",
+            "function isValidTraitId(uint256 id) view returns (bool)",
+            "function getCategoryList() view returns (string[])"
+        ];
+
+        const TRAITS_EXTENSIONS_ABI = [
+            "function equipTraitToToken(uint256 tokenId, uint256 traitId)",
+            "function unequipTrait(uint256 tokenId, string calldata category)",
+            "function getAllEquippedTraits(uint256 tokenId) view returns (string[] memory categories, uint256[] memory traitIds)",
+            "function getTrait(uint256 tokenId, string memory category) view returns (uint256)",
+            "function getCategories() view returns (string[])"
+        ];
+
+        // ===== GLOBAL VARIABLES =====
+        let provider;
+        let signer;
+        let userAddress;
+        let adrianLabCore;
+        let traitsCore;
+        let traitsExtensions;
+
+        let selectedTokenId = null;
+        let selectedTraitId = null;
+        let selectedTraitInfo = null;
+        let pendingTempTrait = null;
+
+        let userTokens = [];
+        let userTraits = new Map();
+        let equippedTraits = new Map();
+        let categories = [];
+
+        const RETRY_ATTEMPTS = 5;
+        const RETRY_DELAY = 2000;
+
+        // ===== UTILITY FUNCTIONS =====
+        async function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        async function retryWithDelay(fn, attempts = RETRY_ATTEMPTS, delay = RETRY_DELAY) {
+            let lastError;
+            for (let i = 0; i < attempts; i++) {
+                try {
+                    if (i > 0) {
+                        const backoffDelay = delay * Math.pow(2, i); // Exponential backoff
+                        await sleep(backoffDelay);
+                    }
+                    return await fn();
+                } catch (error) {
+                    lastError = error;
+                    console.log(`Attempt ${i + 1} failed:`, error.message);
+                    
+                    // Solo reintentar en caso de rate limiting o errores de red
+                    if (!error.message.includes('rate limit') && 
+                        !error.message.includes('call exception') &&
+                        !error.message.includes('network') &&
+                        error.code !== -32005) {
+                        throw error;
+                    }
+                    
+                    if (i === attempts - 1) throw lastError;
+                }
+            }
+        }
+
+        function showStatus(message, type = 'info') {
+            const status = document.getElementById('status');
+            status.className = `status ${type}`;
+            status.innerHTML = message;
+            status.style.display = 'block';
+            
+            if (type === 'success') {
+                setTimeout(() => hideStatus(), 5000);
+            }
+        }
+
+        function hideStatus() {
+            document.getElementById('status').style.display = 'none';
+        }
+
+        // ===== WALLET CONNECTION =====
+        async function connectWallet() {
+            try {
+                if (!window.ethereum) {
+                    showStatus('Please install MetaMask!', 'error');
+                    return;
+                }
+
+                showStatus('Connecting wallet...', 'info');
+                
+                provider = new ethers.providers.Web3Provider(window.ethereum);
+                await provider.send("eth_requestAccounts", []);
+                signer = provider.getSigner();
+                
+                userAddress = await signer.getAddress();
+                const shortAddress = userAddress.slice(0, 6) + '...' + userAddress.slice(-4);
+                
+                // Initialize contracts
+                adrianLabCore = new ethers.Contract(ADRIANLAB_CORE, ADRIANLAB_CORE_ABI, signer);
+                traitsCore = new ethers.Contract(TRAITS_CORE, TRAITS_CORE_ABI, signer);
+                traitsExtensions = new ethers.Contract(TRAITS_EXTENSIONS, TRAITS_EXTENSIONS_ABI, signer);
+                
+                // Update UI
+                document.getElementById('wallet-address').textContent = shortAddress;
+                document.getElementById('connect-section').style.display = 'none';
+                document.getElementById('wallet-connected').style.display = 'block';
+                
+                // Load data
+                await loadCategories();
+                await loadUserTokens();
+                await loadAvailableTraits();
+                
+                hideStatus();
+                
+            } catch (error) {
+                console.error('Connection error:', error);
+                showStatus('Failed to connect wallet: ' + error.message, 'error');
+            }
+        }
+
+        // ===== DATA LOADING FUNCTIONS =====
+        async function loadCategories() {
+            try {
+                categories = await retryWithDelay(() => traitsExtensions.getCategories());
+                console.log('Loaded categories:', categories);
+            } catch (error) {
+                console.error('Error loading categories:', error);
+                // Fallback to hardcoded categories
+                categories = ["BACKGROUND", "BASE", "BODY", "CLOTHING", "EYES", "MOUTH", "HEAD", "ACCESSORIES"];
+            }
+        }
+
+        async function loadUserTokens() {
+            try {
+                showStatus('Loading your AdrianZERO tokens...', 'info');
+                
+                const balance = await retryWithDelay(() => adrianLabCore.balanceOf(userAddress));
+                document.getElementById('token-balance').textContent = balance.toString();
+                
+                userTokens = [];
+                const container = document.getElementById('token-grid');
+                
+                if (balance.eq(0)) {
+                    container.innerHTML = '<div class="empty-state"><h3>No AdrianZERO tokens found</h3><p>Mint some tokens to start building!</p></div>';
+                    return;
+                }
+                
+                container.innerHTML = '<div class="loading">Loading tokens...</div>';
+                
+                for (let i = 0; i < balance.toNumber(); i++) {
+                    try {
+                        const tokenId = await retryWithDelay(() => adrianLabCore.tokenOfOwnerByIndex(userAddress, i));
+                        userTokens.push(tokenId.toNumber());
+                    } catch (error) {
+                        console.error(`Error loading token at index ${i}:`, error);
+                    }
+                }
+                
+                await displayTokens();
+                hideStatus();
+                
+            } catch (error) {
+                console.error('Error loading tokens:', error);
+                showStatus('Error loading tokens: ' + error.message, 'error');
+            }
+        }
+
+        async function displayTokens() {
+            const container = document.getElementById('token-grid');
+            container.innerHTML = '';
+            
+            for (const tokenId of userTokens) {
+                const tokenCard = document.createElement('div');
+                tokenCard.className = 'token-card';
+                tokenCard.setAttribute('data-token-id', tokenId);
+                
+                // Load equipped traits for this token
+                const equipped = await loadEquippedTraits(tokenId);
+                
+                tokenCard.innerHTML = `
+                    <div class="token-id">AdrianZERO #${tokenId}</div>
+                    <div class="token-skin">Click to select</div>
+                    <div class="equipped-traits">
+                        ${equipped.map(trait => `
+                            <div class="equipped-trait">
+                                <span class="trait-category">${trait.category}</span>
+                                <span class="trait-name">${trait.name}</span>
+                                <button class="unequip-btn" onclick="unequipTrait('${trait.category}', event)">×</button>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                
+                tokenCard.onclick = () => selectToken(tokenId);
+                container.appendChild(tokenCard);
+            }
+        }
+
+        async function loadEquippedTraits(tokenId) {
+            try {
+                const [categories, traitIds] = await retryWithDelay(() => 
+                    traitsExtensions.getAllEquippedTraits(tokenId)
+                );
+                
+                const equipped = [];
+                for (let i = 0; i < categories.length; i++) {
+                    if (traitIds[i] > 0) {
+                        try {
+                            const name = await retryWithDelay(() => traitsCore.getName(traitIds[i]));
+                            equipped.push({
+                                category: categories[i],
+                                traitId: traitIds[i].toNumber(),
+                                name: name
+                            });
+                        } catch (error) {
+                            console.error(`Error loading trait ${traitIds[i]}:`, error);
+                        }
+                    }
+                }
+                
+                equippedTraits.set(tokenId, equipped);
+                return equipped;
+                
+            } catch (error) {
+                console.error(`Error loading equipped traits for token ${tokenId}:`, error);
+                return [];
+            }
+        }
+
+        async function loadAvailableTraits() {
+            try {
+                showStatus('Loading your available traits...', 'info');
+                
+                const container = document.getElementById('traits-container');
+                container.innerHTML = '<div class="loading">Loading traits...</div>';
+                
+                userTraits.clear();
+                
+                // Cargar traits en lotes más pequeños para evitar rate limiting
+                const BATCH_SIZE = 10; // Reducido de 25 a 10
+                const MAX_TRAIT_ID = 1000;
+                let totalTraits = 0;
+                
+                for (let start = 1; start <= MAX_TRAIT_ID; start += BATCH_SIZE) {
+                    const promises = [];
+                    for (let traitId = start; traitId < start + BATCH_SIZE && traitId <= MAX_TRAIT_ID; traitId++) {
+                        promises.push(loadTraitIfOwned(traitId));
+                    }
+                    
+                    const results = await Promise.allSettled(promises);
+                    const validTraits = results
+                        .filter(result => result.status === 'fulfilled' && result.value)
+                        .map(result => result.value);
+                    
+                    totalTraits += validTraits.length;
+                    
+                    // Actualizar UI progresivamente
+                    if (validTraits.length > 0) {
+                        if (container.querySelector('.loading')) {
+                            container.innerHTML = '';
+                            displayTraitsByCategory();
+                        }
+                        updateTraitDisplay();
+                    }
+                    
+                    // Esperar más tiempo entre lotes
+                    if (start + BATCH_SIZE <= MAX_TRAIT_ID) {
+                        await sleep(2000); // Aumentado de 1000 a 2000
+                    }
+                }
+                
+                document.getElementById('trait-balance').textContent = totalTraits;
+                
+                if (totalTraits === 0) {
+                    container.innerHTML = '<div class="empty-state"><h3>No traits found</h3><p>Open some packs to collect traits!</p></div>';
+                }
+                
+                hideStatus();
+                
+            } catch (error) {
+                console.error('Error loading traits:', error);
+                showStatus('Error loading traits: ' + error.message, 'error');
+            }
+        }
+
+        async function loadTraitIfOwned(traitId) {
+            try {
+                // Primero verificar si el trait es válido
+                const isValid = await retryWithDelay(() => 
+                    traitsCore.isValidTraitId(traitId)
+                );
+
+                if (!isValid) {
+                    return null;
+                }
+
+                // Luego verificar el balance
+                const balance = await retryWithDelay(() => 
+                    traitsCore.balanceOf(userAddress, traitId)
+                );
+                
+                if (balance.gt(0)) {
+                    // Obtener información del trait
+                    const [name, category, isTemp] = await Promise.all([
+                        retryWithDelay(() => traitsCore.getName(traitId)),
+                        retryWithDelay(() => traitsCore.getCategory(traitId)),
+                        retryWithDelay(() => traitsCore.getTraitInfo(traitId))
+                    ]);
+                    
+                    if (name && name.length > 0) {
+                        const traitData = {
+                            id: traitId,
+                            name: name,
+                            category: category,
+                            balance: balance.toNumber(),
+                            isTemporary: isTemp[1] // El segundo elemento del array es isTemp
+                        };
+                        
+                        userTraits.set(traitId, traitData);
+                        return traitData;
+                    }
+                }
+                return null;
+            } catch (error) {
+                console.error(`Error loading trait ${traitId}:`, error);
+                return null;
+            }
+        }
+
+        function displayTraitsByCategory() {
+            const container = document.getElementById('traits-container');
+            container.innerHTML = '';
+            
+            for (const category of categories) {
+                const categoryTraits = Array.from(userTraits.values())
+                    .filter(trait => trait.category === category);
+                
+                if (categoryTraits.length > 0) {
+                    const categorySection = document.createElement('div');
+                    categorySection.className = 'category-section';
+                    categorySection.innerHTML = `
+                        <div class="category-title">${category} (${categoryTraits.length})</div>
+                        <div class="trait-grid" id="category-${category}"></div>
+                    `;
+                    container.appendChild(categorySection);
+                    
+                    updateCategoryTraits(category, categoryTraits);
+                }
+            }
+        }
+
+        function updateCategoryTraits(category, traits) {
+            const grid = document.getElementById(`category-${category}`);
+            if (!grid) return;
+            
+            grid.innerHTML = '';
+            
+            for (const trait of traits) {
+                const isEquipped = selectedTokenId && 
+                    equippedTraits.has(selectedTokenId) && 
+                    equippedTraits.get(selectedTokenId).some(eq => eq.traitId === trait.id);
+                
+                const traitCard = document.createElement('div');
+                traitCard.className = `trait-card ${isEquipped ? 'equipped' : ''} ${trait.isTemporary ? 'temporary' : ''}`;
+                traitCard.setAttribute('data-trait-id', trait.id);
+                
+                traitCard.innerHTML = `
+                    <div class="trait-info">
+                        <div class="trait-title">${trait.name}</div>
+                        <div class="trait-balance">×${trait.balance}</div>
+                        <div class="trait-meta">ID: ${trait.id}</div>
+                        ${isEquipped ? '<div class="trait-meta" style="color: #00aaff;">EQUIPPED</div>' : ''}
+                    </div>
+                `;
+                
+                traitCard.onclick = () => selectTrait(trait);
+                grid.appendChild(traitCard);
+            }
+        }
+
+        function updateTraitDisplay() {
+            displayTraitsByCategory();
+        }
+
+        // ===== SELECTION FUNCTIONS =====
+        function selectToken(tokenId) {
+            selectedTokenId = tokenId;
+            
+            // Update token card selection
+            document.querySelectorAll('.token-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            document.querySelector(`[data-token-id="${tokenId}"]`).classList.add('selected');
+            
+            // Update preview
+            updatePreview();
+            
+            // Update trait display to show equipped status
+            updateTraitDisplay();
+            
+            // Enable/disable buttons
+            document.getElementById('unequip-all-btn').disabled = false;
+        }
+
+        function selectTrait(trait) {
+            if (!selectedTokenId) {
+                showStatus('Please select an AdrianZERO token first', 'warning');
+                return;
+            }
+            
+            selectedTraitId = trait.id;
+            selectedTraitInfo = trait;
+            
+            // Update trait card selection
+            document.querySelectorAll('.trait-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            document.querySelector(`[data-trait-id="${trait.id}"]`).classList.add('selected');
+            
+            // Enable equip button
+            document.getElementById('equip-btn').disabled = false;
+            
+            // Update button text based on trait status
+            const equipBtn = document.getElementById('equip-btn');
+            const isEquipped = equippedTraits.has(selectedTokenId) && 
+                equippedTraits.get(selectedTokenId).some(eq => eq.traitId === trait.id);
+            
+            if (isEquipped) {
+                equipBtn.textContent = 'Already Equipped';
+                equipBtn.disabled = true;
+            } else {
+                equipBtn.textContent = trait.isTemporary ? 'Equip Temporary Trait' : 'Equip Trait';
+                equipBtn.className = trait.isTemporary ? 'action-btn btn-warning' : 'action-btn btn-primary';
+                equipBtn.disabled = false;
+            }
+        }
+
+        function updatePreview() {
+            const container = document.getElementById('preview-container');
+            const summary = document.getElementById('equipped-summary');
+            const equippedList = document.getElementById('equipped-list');
+            
+            if (!selectedTokenId) {
+                container.innerHTML = '<div class="preview-placeholder">Select an AdrianZERO token to preview</div>';
+                summary.style.display = 'none';
+                return;
+            }
+            
+            container.innerHTML = `
+                <div class="token-preview">🎭</div>
+                <div class="preview-placeholder">AdrianZERO #${selectedTokenId}</div>
+            `;
+            
+            const equipped = equippedTraits.get(selectedTokenId) || [];
+            
+            if (equipped.length > 0) {
+                summary.style.display = 'block';
+                equippedList.innerHTML = equipped.map(trait => `
+                    <div class="summary-item">
+                        <span>${trait.category}</span>
+                        <span>${trait.name}</span>
+                    </div>
+                `).join('');
+            } else {
+                summary.style.display = 'none';
+            }
+        }
+
+        // ===== EQUIPMENT FUNCTIONS =====
+        async function equipSelectedTrait() {
+            if (!selectedTokenId || !selectedTraitId || !selectedTraitInfo) {
+                showStatus('Please select both a token and a trait', 'warning');
+                return;
+            }
+            
+            // Check for temporary trait confirmation
+            if (selectedTraitInfo.isTemporary) {
+                pendingTempTrait = selectedTraitInfo;
+                document.getElementById('modal-text').textContent = 
+                    `The trait "${selectedTraitInfo.name}" is temporary and will be consumed when equipped. You currently have ${selectedTraitInfo.balance} of this trait. Are you sure you want to continue?`;
+                document.getElementById('temp-trait-modal').style.display = 'flex';
+                return;
+            }
+            
+            await performEquip();
+        }
+
+        function confirmEquipTempTrait() {
+            document.getElementById('temp-trait-modal').style.display = 'none';
+            if (pendingTempTrait) {
+                performEquip();
+                pendingTempTrait = null;
+            }
+        }
+
+        function cancelEquipTempTrait() {
+            document.getElementById('temp-trait-modal').style.display = 'none';
+            pendingTempTrait = null;
+        }
+
+        async function performEquip() {
+            try {
+                showStatus('Equipping trait...', 'info');
+                
+                const tx = await retryWithDelay(() => 
+                    traitsExtensions.equipTraitToToken(selectedTokenId, selectedTraitId, {
+                        gasLimit: 500000
+                    })
+                );
+                
+                showStatus(`Transaction sent... <a href="https://routescan.io/tx/${tx.hash}" target="_blank" class="tx-link">View TX</a>`, 'info');
+                await tx.wait();
+                
+                showStatus('Trait equipped successfully!', 'success');
+                
+                // Refresh data
+                await loadEquippedTraits(selectedTokenId);
+                await displayTokens();
+                updatePreview();
+                updateTraitDisplay();
+                
+                // Update trait balance if temporary
+                if (selectedTraitInfo && selectedTraitInfo.isTemporary) {
+                    selectedTraitInfo.balance -= 1;
+                    if (selectedTraitInfo.balance <= 0) {
+                        userTraits.delete(selectedTraitId);
+                    }
+                    updateTraitDisplay();
+                }
+                
+                // Clear selection
+                selectedTraitId = null;
+                selectedTraitInfo = null;
+                document.getElementById('equip-btn').disabled = true;
+                document.querySelectorAll('.trait-card').forEach(card => {
+                    card.classList.remove('selected');
+                });
+                
+            } catch (error) {
+                console.error('Error equipping trait:', error);
+                showStatus('Failed to equip trait: ' + error.message, 'error');
+            }
+        }
+
+        async function unequipTrait(category, event) {
+            event.stopPropagation();
+            
+            if (!selectedTokenId) {
+                showStatus('Please select a token first', 'warning');
+                return;
+            }
+            
+            try {
+                showStatus(`Unequipping ${category} trait...`, 'info');
+                
+                const tx = await retryWithDelay(() =>
+                    traitsExtensions.unequipTrait(selectedTokenId, category, {
+                        gasLimit: 300000
+                    })
+                );
+                
+                showStatus(`Transaction sent... <a href="https://routescan.io/tx/${tx.hash}" target="_blank" class="tx-link">View TX</a>`, 'info');
+                await tx.wait();
+                
+                showStatus('Trait unequipped successfully!', 'success');
+                
+                // Refresh data
+                await loadEquippedTraits(selectedTokenId);
+                await displayTokens();
+                updatePreview();
+                updateTraitDisplay();
+                
+            } catch (error) {
+                console.error('Error unequipping trait:', error);
+                showStatus('Failed to unequip trait: ' + error.message, 'error');
+            }
+        }
+
+        async function unequipAllTraits() {
+            if (!selectedTokenId) {
+                showStatus('Please select a token first', 'warning');
+                return;
+            }
+            
+            const equipped = equippedTraits.get(selectedTokenId) || [];
+            if (equipped.length === 0) {
+                showStatus('No traits equipped on this token', 'info');
+                return;
+            }
+            
+            try {
+                showStatus('Unequipping all traits...', 'info');
+                
+                for (const trait of equipped) {
+                    const tx = await retryWithDelay(() =>
+                        traitsExtensions.unequipTrait(selectedTokenId, trait.category, {
+                            gasLimit: 300000
+                        })
+                    );
+                    await tx.wait();
+                    await sleep(1000); // Delay between transactions
+                }
+                
+                showStatus('All traits unequipped successfully!', 'success');
+                
+                // Refresh data
+                await loadEquippedTraits(selectedTokenId);
+                await displayTokens();
+                updatePreview();
+                updateTraitDisplay();
+                
+            } catch (error) {
+                console.error('Error unequipping all traits:', error);
+                showStatus('Failed to unequip all traits: ' + error.message, 'error');
+            }
+        }
+
+        // ===== EVENT LISTENERS =====
+        window.addEventListener('load', function() {
+            if (typeof ethers === 'undefined') {
+                console.error('ethers.js not loaded');
+                showStatus('Error: ethers.js not loaded. Please refresh the page.', 'error');
+                return;
+            }
+            
+            if (window.ethereum && window.ethereum.selectedAddress) {
+                connectWallet();
+            }
+        });
+
+        if (window.ethereum) {
+            window.ethereum.on('accountsChanged', function (accounts) {
+                if (accounts.length === 0) {
+                    document.getElementById('connect-section').style.display = 'block';
+                    document.getElementById('wallet-connected').style.display = 'none';
+                    userAddress = null;
+                    selectedTokenId = null;
+                    selectedTraitId = null;
+                } else {
+                    connectWallet();
+                }
+            });
+
+            window.ethereum.on('chainChanged', function (chainId) {
+                window.location.reload();
+            });
+        }
+    </script>
+</body>
+</html>
