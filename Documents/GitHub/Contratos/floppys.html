@@ -1,0 +1,1384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AdrianLab TraitPacks</title>
+    <script src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 56px;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #00ff88, #00aaff, #ff0088);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-size: 200% 200%;
+            animation: gradient 3s ease infinite;
+        }
+
+        @keyframes gradient {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .subtitle {
+            color: #888;
+            font-size: 20px;
+            margin-bottom: 20px;
+        }
+
+        .tabs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 40px;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .tab.active {
+            background: linear-gradient(45deg, #00ff88, #00aaff);
+            color: #000;
+            border-color: transparent;
+        }
+
+        .tab:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .wallet-section {
+            background: rgba(20, 20, 20, 0.8);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+            text-align: center;
+        }
+
+        .connect-btn {
+            padding: 16px 32px;
+            font-size: 18px;
+            font-weight: 600;
+            background: linear-gradient(45deg, #ff0088, #ff8800);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .connect-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(255, 0, 136, 0.3);
+        }
+
+        .wallet-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .wallet-address {
+            font-family: monospace;
+            font-size: 16px;
+            color: #00ff88;
+            background: rgba(0, 255, 136, 0.1);
+            padding: 8px 16px;
+            border-radius: 8px;
+        }
+
+        .balance-info {
+            display: flex;
+            gap: 30px;
+        }
+
+        .balance-item {
+            text-align: center;
+        }
+
+        .balance-label {
+            color: #888;
+            font-size: 14px;
+        }
+
+        .balance-value {
+            color: #00aaff;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .pack-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+        }
+
+        .pack-card {
+            background: rgba(20, 20, 20, 0.8);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .pack-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(0, 255, 136, 0.3);
+            box-shadow: 0 20px 40px rgba(0, 255, 136, 0.1);
+        }
+
+        .pack-title {
+            font-size: 24px;
+            margin-bottom: 15px;
+            color: #00ff88;
+        }
+
+        .pack-info {
+            margin-bottom: 25px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .label {
+            color: #888;
+        }
+
+        .value {
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .pack-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .quantity-controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .quantity-btn {
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .quantity-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .quantity-display {
+            font-size: 24px;
+            font-weight: 700;
+            color: #00ff88;
+            min-width: 40px;
+            text-align: center;
+        }
+
+        .total-cost {
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .cost-amount {
+            color: #00aaff;
+            font-weight: 700;
+        }
+
+        .action-btn {
+            padding: 14px 20px;
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #00ff88, #00aaff);
+            color: #000;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 255, 136, 0.3);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .btn-open {
+            background: linear-gradient(45deg, #ff0088, #ff8800);
+            color: #fff;
+        }
+
+        .btn-open:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(255, 0, 136, 0.3);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .traits-section {
+            margin-top: 40px;
+        }
+
+        .traits-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .trait-card {
+            background: rgba(20, 20, 20, 0.8);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .trait-card:hover {
+            border-color: rgba(0, 170, 255, 0.3);
+            transform: translateY(-3px);
+        }
+
+        .trait-name {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #00aaff;
+        }
+
+        .trait-category {
+            color: #888;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .trait-amount {
+            color: #00ff88;
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            max-width: 400px;
+            padding: 20px;
+            border-radius: 12px;
+            z-index: 1000;
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .status.success {
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            color: #00ff88;
+        }
+
+        .status.error {
+            background: rgba(255, 0, 0, 0.1);
+            border: 1px solid rgba(255, 0, 0, 0.3);
+            color: #ff4444;
+        }
+
+        .status.info {
+            background: rgba(0, 170, 255, 0.1);
+            border: 1px solid rgba(0, 170, 255, 0.3);
+            color: #00aaff;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #00ff88;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .tx-link {
+            color: #00aaff;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .tx-link:hover {
+            text-decoration: underline;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #888;
+        }
+
+        .empty-state h3 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .refresh-btn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .refresh-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .pack-actions {
+            margin-top: 20px;
+        }
+
+        .quantity-controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .quantity-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid rgba(0, 255, 136, 0.3);
+            background: rgba(0, 255, 136, 0.1);
+            color: #00ff88;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .quantity-btn:hover {
+            background: rgba(0, 255, 136, 0.2);
+            border-color: rgba(0, 255, 136, 0.5);
+        }
+
+        .quantity-display {
+            font-size: 24px;
+            font-weight: bold;
+            color: #00ff88;
+            min-width: 40px;
+            text-align: center;
+        }
+
+        .total-cost {
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 16px;
+            color: #888;
+        }
+
+        .cost-amount {
+            color: #00aaff;
+            font-weight: bold;
+        }
+
+        .action-btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #00ff88, #00aaff);
+            color: #000;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 255, 136, 0.3);
+        }
+
+        .btn-open {
+            background: linear-gradient(45deg, #ff0088, #ff8800);
+            color: #fff;
+        }
+
+        .btn-open:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(255, 0, 136, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>AdrianLab</h1>
+            <p class="subtitle">TraitPacks & Inventory Management</p>
+        </div>
+
+        <div class="wallet-section">
+            <div id="connect-section">
+                <button class="connect-btn" onclick="connectWallet()">Connect Wallet</button>
+            </div>
+            <div id="wallet-connected" style="display: none;">
+                <div class="wallet-info">
+                    <div class="wallet-address" id="wallet-address"></div>
+                    <div class="balance-info">
+                        <div class="balance-item">
+                            <div class="balance-label">$ADRIAN Balance</div>
+                            <div class="balance-value" id="adrian-balance">-</div>
+                        </div>
+                        <div class="balance-item">
+                            <div class="balance-label">Unclaimed Packs</div>
+                            <div class="balance-value" id="unclaimed-packs">-</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('purchase')">Purchase Packs</div>
+            <div class="tab" onclick="switchTab('inventory')">Open Packs</div>
+            <div class="tab" onclick="switchTab('traits')">My Traits</div>
+        </div>
+
+        <div id="purchase-tab" class="tab-content active">
+            <div class="pack-grid" id="available-packs">
+                <!-- Available packs will be loaded here -->
+            </div>
+        </div>
+
+        <div id="inventory-tab" class="tab-content">
+            <div class="pack-grid" id="owned-packs">
+                <!-- Owned packs will be loaded here -->
+            </div>
+        </div>
+
+        <div id="traits-tab" class="tab-content">
+            <div class="traits-grid" id="owned-traits">
+                <!-- Owned traits will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <div id="status" class="status"></div>
+
+    <script>
+        // Contract addresses - ACTUALIZADAS
+        const ADRIAN_TOKEN = "0x7E99075Ce287F1cF8cBCAaa6A1C7894e404fD7Ea";
+        const TRAITS_CORE = "0xb72be829f06a6c5baf99cdae204ffd99ea4a6c9a";
+        const PACK_MINTER = "0x35ea27cb979624c9598f7438eb86318926262325";
+
+        // ABIs
+        const ERC20_ABI = [
+            "function approve(address spender, uint256 amount) returns (bool)",
+            "function balanceOf(address owner) view returns (uint256)",
+            "function allowance(address owner, address spender) view returns (uint256)"
+        ];
+
+        const TRAITS_CORE_ABI = [
+            "function isValidPackId(uint256 packId) view returns (bool)",
+            "function getPackInfo(uint256 packId) view returns (uint256 price, uint256 maxSupply, uint256 minted, uint256 itemsPerPack, uint256 maxPerWallet, bool active, bool requiresAllowlist)",
+            "function packTraitsLength(uint256 packId) view returns (uint256)",
+            "function getPackTraitInfo(uint256 packId, uint256 index) view returns (uint256 traitId, uint256 minAmount, uint256 maxAmount, uint256 chance, uint256 remaining)",
+            "function packsMintedPerWallet(address user, uint256 packId) view returns (uint256)",
+            "function unclaimedPacks(address user, uint256 packId) view returns (uint256)",
+            "function purchasePack(uint256 packId, uint256 quantity, bytes32[] calldata merkleProof)",
+            "function openPack(uint256 packId)",
+            "function balanceOf(address account, uint256 id) view returns (uint256)",
+            "function getUnclaimedPacks(address user, uint256 packId) view returns (uint256)"
+        ];
+
+        const PACK_MINTER_ABI = [
+            "function purchasePack(uint256 packId, uint256 quantity, bytes32[] merkleProof)",
+            "function openPack(uint256 packId)",
+            "function canPurchasePack(address user, uint256 packId, uint256 quantity) view returns (bool canPurchase, string reason)",
+            "function canOpenPack(address user, uint256 packId) view returns (bool canOpen, string reason)"
+        ];
+
+        // Global variables
+        let provider;
+        let signer;
+        let adrianToken;
+        let traitsCore;
+        let packMinter;
+        let userAddress;
+        let packQuantities = {};
+
+        // Reducir el número de packs iniciales para pruebas
+        const KNOWN_PACK_IDS = [100000, 100001];
+
+        async function connectWallet() {
+            try {
+                if (!window.ethereum) {
+                    showStatus('Please install MetaMask!', 'error');
+                    return;
+                }
+
+                showStatus('Connecting wallet...', 'info');
+                
+                provider = new ethers.providers.Web3Provider(window.ethereum);
+                await provider.send("eth_requestAccounts", []);
+                signer = provider.getSigner();
+                
+                userAddress = await signer.getAddress();
+                const shortAddress = userAddress.slice(0, 6) + '...' + userAddress.slice(-4);
+                
+                // Initialize contracts
+                adrianToken = new ethers.Contract(ADRIAN_TOKEN, ERC20_ABI, signer);
+                traitsCore = new ethers.Contract(TRAITS_CORE, TRAITS_CORE_ABI, signer);
+                packMinter = new ethers.Contract(PACK_MINTER, PACK_MINTER_ABI, signer);
+                
+                // Update UI
+                document.getElementById('wallet-address').textContent = shortAddress;
+                document.getElementById('connect-section').style.display = 'none';
+                document.getElementById('wallet-connected').style.display = 'block';
+                
+                // Load data secuencialmente para evitar rate limiting
+                await updateBalances();
+                showStatus('Loading packs...', 'info');
+                await displayPacks();
+                hideStatus();
+                
+                // Cargar el resto en segundo plano
+                setTimeout(async () => {
+                    await loadOwnedPacks();
+                    await loadOwnedTraits();
+                }, 2000);
+                
+            } catch (error) {
+                console.error(error);
+                showStatus('Failed to connect wallet: ' + error.message, 'error');
+            }
+        }
+
+        async function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        async function retryWithDelay(fn, retries = 5, initialDelay = 1000) {
+            let lastError;
+            for (let i = 0; i < retries; i++) {
+                try {
+                    // Incrementar el delay exponencialmente en cada reintento
+                    const delay = initialDelay * Math.pow(2, i);
+                    await sleep(delay);
+                    return await fn();
+                } catch (error) {
+                    lastError = error;
+                    console.log(`Intento ${i + 1} fallido:`, error.message);
+                    
+                    // Si no es un error de rate limit, no reintentar
+                    if (!error.message.includes('rate limit') && 
+                        !error.message.includes('call exception')) {
+                        throw error;
+                    }
+                    
+                    // En el último intento, lanzar el error
+                    if (i === retries - 1) {
+                        throw lastError;
+                    }
+                }
+            }
+        }
+
+        async function updateBalances() {
+            try {
+                await sleep(500); // Delay inicial
+                const balance = await retryWithDelay(() => adrianToken.balanceOf(userAddress));
+                const formatted = ethers.utils.formatEther(balance);
+                document.getElementById('adrian-balance').textContent = parseFloat(formatted).toLocaleString();
+
+                // Solo verificar los primeros packs para el conteo inicial
+                let totalUnclaimed = 0;
+                for (let i = 0; i < 2; i++) { // Solo los 2 primeros packs
+                    try {
+                        await sleep(500);
+                        const packId = KNOWN_PACK_IDS[i];
+                        const unclaimed = await retryWithDelay(() => traitsCore.unclaimedPacks(userAddress, packId));
+                        totalUnclaimed += unclaimed.toNumber();
+                    } catch (e) {
+                        console.log(`Error checking unclaimed for pack ${KNOWN_PACK_IDS[i]}:`, e);
+                    }
+                }
+                document.getElementById('unclaimed-packs').textContent = totalUnclaimed;
+                
+            } catch (error) {
+                console.error('Error updating balances:', error);
+            }
+        }
+
+        async function verifyPack(packId) {
+            try {
+                console.log(`Verificando pack ${packId}...`);
+                
+                // 1. Verificar existencia en Core
+                console.log("1. Verificando existencia en Core...");
+                const isValidPackId = await retryWithDelay(
+                    () => traitsCore.isValidPackId(packId),
+                    5,
+                    2000
+                );
+                console.log(`   - isValidPackId: ${isValidPackId}`);
+                if (!isValidPackId) {
+                    throw new Error("Pack ID no válido");
+                }
+
+                // 2. Obtener info del pack
+                console.log("2. Obteniendo info del pack...");
+                const packInfo = await retryWithDelay(
+                    () => traitsCore.getPackInfo(packId),
+                    5,
+                    2000
+                );
+                console.log(`   - Pack info:`, packInfo);
+                
+                if (!packInfo.active) {
+                    console.log(`   - Pack ${packId} no está activo`);
+                    return false;
+                }
+
+                // 3. Verificar límites de mint
+                console.log("3. Verificando límites de mint...");
+                const userMinted = await retryWithDelay(
+                    () => traitsCore.packsMintedPerWallet(userAddress, packId),
+                    5,
+                    2000
+                );
+                console.log(`   - Packs minteados por usuario: ${userMinted}`);
+                console.log(`   - Límite por wallet: ${packInfo.maxPerWallet}`);
+                
+                if (userMinted >= packInfo.maxPerWallet) {
+                    console.log(`   - Límite de mint alcanzado para el usuario`);
+                    return false;
+                }
+
+                // 4. Obtener contenidos del pack
+                console.log("4. Obteniendo contenidos del pack...");
+                const traitsLength = await retryWithDelay(
+                    () => traitsCore.packTraitsLength(packId),
+                    5,
+                    2000
+                );
+                console.log(`   - Cantidad de traits en el pack: ${traitsLength}`);
+                
+                const traits = [];
+                for (let i = 0; i < traitsLength; i++) {
+                    const traitInfo = await retryWithDelay(
+                        () => traitsCore.getPackTraitInfo(packId, i),
+                        5,
+                        2000
+                    );
+                    traits.push(traitInfo);
+                }
+                console.log(`   - Traits del pack:`, traits);
+
+                return true;
+            } catch (error) {
+                console.error(`Error verificando pack ${packId}:`, error);
+                return false;
+            }
+        }
+
+        async function displayPacks() {
+            const container = document.getElementById('available-packs');
+            container.innerHTML = '<div class="loading-message">Cargando packs...</div>';
+
+            try {
+                const packs = await loadAvailablePacks();
+                
+                if (packs.length === 0) {
+                    container.innerHTML = '<div class="empty-state"><h3>No hay packs disponibles</h3><p>¡Vuelve más tarde para nuevas liberaciones!</p></div>';
+                    return;
+                }
+
+                container.innerHTML = ''; // Limpiar mensaje de carga
+                
+                for (const pack of packs) {
+                    const packCard = createPackCard(pack.id, {
+                        price: pack.price,
+                        maxSupply: pack.maxSupply.toNumber(),
+                        minted: pack.minted.toNumber(),
+                        itemsPerPack: pack.itemsPerPack.toNumber(),
+                        maxPerWallet: pack.maxPerWallet.toNumber(),
+                        active: pack.active,
+                        requiresAllowlist: pack.requiresAllowlist,
+                        uri: pack.uri
+                    }, 'purchase');
+                    
+                    container.appendChild(packCard);
+                    console.log(`Pack ${pack.id} mostrado exitosamente`);
+                }
+            } catch (error) {
+                console.error("Error mostrando packs:", error);
+                container.innerHTML = '<div class="error-state"><h3>Error cargando packs</h3><p>Por favor, intenta recargar la página.</p></div>';
+            }
+        }
+
+        async function loadAvailablePacks() {
+            try {
+                const packs = [];
+                const packIds = [100000, 100001]; // Solo verificamos estos dos packs por ahora
+                
+                for (const packId of packIds) {
+                    console.log(`Intentando cargar pack ${packId}...`);
+                    try {
+                        const isValid = await verifyPack(packId);
+                        if (isValid) {
+                            const packInfo = await traitsCore.getPackInfo(packId);
+                            packs.push({
+                                id: packId,
+                                price: packInfo.price,
+                                maxSupply: packInfo.maxSupply,
+                                minted: packInfo.minted,
+                                itemsPerPack: packInfo.itemsPerPack,
+                                maxPerWallet: packInfo.maxPerWallet,
+                                active: packInfo.active,
+                                requiresAllowlist: packInfo.requiresAllowlist
+                            });
+                        } else {
+                            console.log(`Pack ${packId} no disponible`);
+                        }
+                    } catch (error) {
+                        console.error(`Error cargando pack ${packId}:`, error);
+                    }
+                }
+                
+                return packs;
+            } catch (error) {
+                console.error("Error cargando packs:", error);
+                return [];
+            }
+        }
+
+        async function loadOwnedPacks() {
+            try {
+                const container = document.getElementById('owned-packs');
+                container.innerHTML = '<div class="loading-message">Cargando packs...</div>';
+
+                const ownedPacks = [];
+                const packIds = [100000, 100001]; // Solo verificamos estos dos packs por ahora
+
+                for (const packId of packIds) {
+                    try {
+                        const balance = await retryWithDelay(
+                            () => traitsCore.balanceOf(userAddress, packId),
+                            5,
+                            2000
+                        );
+                        
+                        if (balance > 0) {
+                            const unclaimed = await retryWithDelay(
+                                () => traitsCore.unclaimedPacks(userAddress, packId),
+                                5,
+                                2000
+                            );
+                            
+                            if (unclaimed > 0) {
+                                const packInfo = await retryWithDelay(
+                                    () => traitsCore.getPackInfo(packId),
+                                    5,
+                                    2000
+                                );
+                                
+                                ownedPacks.push({
+                                    id: packId,
+                                    balance: balance,
+                                    unclaimed: unclaimed,
+                                    info: packInfo
+                                });
+                            }
+                        }
+                    } catch (error) {
+                        console.error(`Error cargando pack ${packId}:`, error);
+                    }
+                }
+
+                if (ownedPacks.length === 0) {
+                    container.innerHTML = '<div class="empty-state"><h3>No tienes packs</h3><p>¡Compra algunos packs para empezar!</p></div>';
+                    return;
+                }
+
+                container.innerHTML = '';
+                for (const pack of ownedPacks) {
+                    const packCard = createPackCard(pack.id, {
+                        balance: pack.balance,
+                        unclaimed: pack.unclaimed,
+                        info: pack.info
+                    }, 'open');
+                    container.appendChild(packCard);
+                }
+            } catch (error) {
+                console.error("Error cargando packs:", error);
+                container.innerHTML = '<div class="error-state"><h3>Error cargando packs</h3><p>Por favor, intenta recargar la página.</p></div>';
+            }
+        }
+
+        async function loadOwnedTraits() {
+            const container = document.getElementById('owned-traits');
+            container.innerHTML = '<div class="loading-message">Loading traits...</div>';
+
+            const traits = [];
+            const MAX_TRAITS_TO_CHECK = 10; // Reducir a solo 10 traits inicialmente
+
+            for (let traitId = 1; traitId <= MAX_TRAITS_TO_CHECK; traitId++) {
+                try {
+                    await sleep(500); // Aumentar delay entre traits
+                    const balance = await retryWithDelay(() => traitsCore.balanceOf(userAddress, traitId));
+                    if (balance.gt(0)) {
+                        await sleep(500);
+                        const name = await retryWithDelay(() => traitsCore.getName(traitId));
+                        await sleep(500);
+                        const category = await retryWithDelay(() => traitsCore.getCategory(traitId));
+                        
+                        if (name && name.length > 0) {
+                            traits.push({
+                                id: traitId,
+                                name: name,
+                                category: category,
+                                amount: balance.toNumber()
+                            });
+
+                            // Actualizar UI progresivamente
+                            if (container.querySelector('.loading-message')) {
+                                container.innerHTML = '';
+                            }
+                            
+                            const traitCard = document.createElement('div');
+                            traitCard.className = 'trait-card';
+                            traitCard.innerHTML = `
+                                <div class="trait-name">${name}</div>
+                                <div class="trait-category">${category}</div>
+                                <div class="trait-amount">×${balance.toNumber()}</div>
+                            `;
+                            container.appendChild(traitCard);
+                        }
+                    }
+                } catch (error) {
+                    console.log(`Error loading trait ${traitId}:`, error);
+                }
+            }
+
+            if (traits.length === 0) {
+                container.innerHTML = '<div class="empty-state"><h3>No traits owned</h3><p>Open some packs to collect traits!</p><button class="refresh-btn" onclick="loadOwnedTraits()">Refresh</button></div>';
+            }
+        }
+
+        function createPackCard(packId, info, type) {
+            const card = document.createElement('div');
+            card.className = 'pack-card';
+
+            // Crear lista de contenidos si existe
+            let contentsHtml = '';
+            if (info.contents && info.contents.length > 0) {
+                contentsHtml = `
+                    <div class="info-row">
+                        <span class="label">Contents:</span>
+                        <span class="value">${info.contents.length} traits</span>
+                    </div>
+                `;
+            }
+
+            if (type === 'purchase') {
+                const quantity = packQuantities[packId] || 1;
+                const totalCost = ethers.utils.formatEther(info.price.mul(quantity));
+
+                card.innerHTML = `
+                    <div class="pack-title">Pack #${packId}</div>
+                    <div class="pack-info">
+                        <div class="info-row">
+                            <span class="label">Price:</span>
+                            <span class="value">${ethers.utils.formatEther(info.price)} $ADRIAN</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Items per pack:</span>
+                            <span class="value">${info.itemsPerPack}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Available:</span>
+                            <span class="value">${info.maxSupply - info.minted} / ${info.maxSupply}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Max per wallet:</span>
+                            <span class="value">${info.maxPerWallet}</span>
+                        </div>
+                        ${contentsHtml}
+                    </div>
+                    <div class="pack-actions">
+                        <div class="quantity-controls">
+                            <button class="quantity-btn" onclick="decreaseQuantity(${packId})">-</button>
+                            <div class="quantity-display" id="quantity-${packId}">${quantity}</div>
+                            <button class="quantity-btn" onclick="increaseQuantity(${packId}, ${info.maxPerWallet})">+</button>
+                        </div>
+                        <div class="total-cost">
+                            Total: <span class="cost-amount">${parseFloat(totalCost).toLocaleString()}</span> $ADRIAN
+                        </div>
+                        <button class="action-btn btn-secondary" onclick="approvePack(${packId})">
+                            Approve $ADRIAN
+                        </button>
+                        <button class="action-btn btn-primary" onclick="purchasePack(${packId})">
+                            Purchase Pack
+                        </button>
+                    </div>
+                `;
+            } else if (type === 'open') {
+                card.innerHTML = `
+                    <div class="pack-title">Pack #${packId}</div>
+                    <div class="pack-info">
+                        <div class="info-row">
+                            <span class="label">Items per pack:</span>
+                            <span class="value">${info.itemsPerPack}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Unclaimed:</span>
+                            <span class="value">${info.unclaimed}</span>
+                        </div>
+                        ${contentsHtml}
+                    </div>
+                    <div class="pack-actions">
+                        <button class="action-btn btn-open" onclick="openPack(${packId})">
+                            Open Pack
+                        </button>
+                    </div>
+                `;
+            }
+
+            return card;
+        }
+
+        function increaseQuantity(packId, maxPerWallet) {
+            const current = packQuantities[packId] || 1;
+            if (current < maxPerWallet) {
+                packQuantities[packId] = current + 1;
+                updatePackDisplay(packId);
+            }
+        }
+
+        function decreaseQuantity(packId) {
+            const current = packQuantities[packId] || 1;
+            if (current > 1) {
+                packQuantities[packId] = current - 1;
+                updatePackDisplay(packId);
+            }
+        }
+
+        function updatePackDisplay(packId) {
+            const quantityEl = document.getElementById(`quantity-${packId}`);
+            if (quantityEl) {
+                quantityEl.textContent = packQuantities[packId] || 1;
+                // Re-render the pack to update total cost
+                displayPacks();
+            }
+        }
+
+        async function approvePack(packId) {
+            try {
+                showStatus('Checking pack info...', 'info');
+                
+                // Obtener info del pack con reintento
+                const packInfo = await retryWithDelay(() => traitsCore.getPackInfo(packId));
+                const [price] = packInfo;
+                const quantity = packQuantities[packId] || 1;
+                const totalAmount = price.mul(quantity);
+
+                showStatus('Checking current allowance...', 'info');
+                
+                // Verificar allowance actual con reintento
+                const allowance = await retryWithDelay(() => adrianToken.allowance(userAddress, PACK_MINTER));
+                
+                if (allowance.gte(totalAmount)) {
+                    showStatus('Allowance already sufficient!', 'success');
+                    return;
+                }
+
+                // Calcular un monto de aprobación mayor para evitar múltiples approves
+                const approveAmount = totalAmount.mul(2); // Aprobamos el doble para evitar futuros approves
+
+                showStatus('Approving $ADRIAN tokens...', 'info');
+                
+                // Hacer el approve con reintento
+                const tx = await retryWithDelay(() => 
+                    adrianToken.approve(PACK_MINTER, approveAmount, {
+                        gasLimit: 100000 // Añadir gas limit explícito
+                    })
+                );
+                
+                showStatus(`Approving... <a href="https://routescan.io/tx/${tx.hash}" target="_blank" class="tx-link">View TX</a>`, 'info');
+                
+                // Esperar confirmación con reintento
+                await retryWithDelay(() => tx.wait());
+                
+                showStatus('Approval successful!', 'success');
+                
+            } catch (error) {
+                console.error('Error in approvePack:', error);
+                
+                // Mejorar el mensaje de error para el usuario
+                let errorMessage = 'Approval failed: ';
+                if (error.message.includes('rate limit')) {
+                    errorMessage += 'MetaMask is being rate limited. Please wait a few seconds and try again.';
+                } else if (error.message.includes('user rejected')) {
+                    errorMessage += 'Transaction was rejected.';
+                } else if (error.message.includes('insufficient funds')) {
+                    errorMessage += 'Insufficient funds for gas.';
+                } else {
+                    errorMessage += error.message;
+                }
+                
+                showStatus(errorMessage, 'error');
+            }
+        }
+
+        async function purchasePack(packId) {
+            try {
+                showStatus('Checking pack info...', 'info');
+                
+                await sleep(2000); // Delay inicial
+                
+                // NEW: Pre-validation using the new contract
+                const [canPurchase, reason] = await retryWithDelay(
+                    () => packMinter.canPurchasePack(
+                        userAddress, 
+                        packId, 
+                        packQuantities[packId] || 1
+                    ),
+                    5,
+                    2000
+                );
+                
+                if (!canPurchase) {
+                    console.error("Cannot purchase:", reason);
+                    showStatus(`Cannot purchase: ${reason}`, 'error');
+                    return;
+                }
+                
+                // Obtener info del pack con reintento y agregar logs detallados
+                const packInfo = await retryWithDelay(() => traitsCore.getPackInfo(packId), 5, 2000);
+                console.log("Pack Info:", {
+                    price: packInfo[0].toString(),
+                    maxSupply: packInfo[1].toString(),
+                    minted: packInfo[2].toString(),
+                    itemsPerPack: packInfo[3].toString(),
+                    maxPerWallet: packInfo[4].toString(),
+                    active: packInfo[5],
+                    requiresAllowlist: packInfo[6]
+                });
+
+                // Verificar si está activo
+                if (!packInfo[5]) {
+                    console.error("Pack not active");
+                    showStatus('Pack not active', 'error');
+                    return;
+                }
+                
+                // Verificar límites
+                if (packInfo[2].gte(packInfo[1])) {
+                    console.error("Pack sold out");
+                    showStatus('Pack sold out', 'error');
+                    return;
+                }
+                
+                const quantity = packQuantities[packId] || 1;
+                const totalAmount = packInfo[0].mul(quantity);
+
+                await sleep(2000); // Delay antes de verificar balance/allowance
+                
+                // Verificar balance y allowance con logs
+                const balance = await retryWithDelay(() => adrianToken.balanceOf(userAddress), 5, 2000);
+                await sleep(2000); // Delay entre llamadas
+                const allowance = await retryWithDelay(() => adrianToken.allowance(userAddress, PACK_MINTER), 5, 2000);
+                console.log("Token Info:", {
+                    balance: balance.toString(),
+                    allowance: allowance.toString(),
+                    requiredAmount: totalAmount.toString(),
+                    hasEnoughBalance: balance.gte(totalAmount),
+                    hasEnoughAllowance: allowance.gte(totalAmount)
+                });
+
+                if (allowance.lt(totalAmount)) {
+                    console.error("Insufficient allowance");
+                    showStatus('Please approve $ADRIAN tokens first!', 'error');
+                    return;
+                }
+
+                if (balance.lt(totalAmount)) {
+                    console.error("Insufficient balance");
+                    showStatus('Insufficient $ADRIAN balance!', 'error');
+                    return;
+                }
+                
+                showStatus('Processing purchase...', 'info');
+                
+                // Usar el merkleProof correcto con un elemento bytes32 de ceros
+                const merkleProof = ["0x0000000000000000000000000000000000000000000000000000000000000000"];
+                
+                console.log("Attempting purchase with:", {
+                    packId: packId,
+                    quantity: quantity,
+                    merkleProof: merkleProof,
+                    gasLimit: 1000000
+                });
+                
+                // Intentar la compra con reintentos
+                const tx = await retryWithDelay(() => 
+                    packMinter.purchasePack(packId, quantity, merkleProof, {
+                        gasLimit: 1000000
+                    }), 5, 2000
+                );
+                
+                showStatus(`Waiting for confirmation... <a href="https://routescan.io/tx/${tx.hash}" target="_blank" class="tx-link">View TX</a>`, 'info');
+                await tx.wait();
+                
+                showStatus('Purchase successful!', 'success');
+                
+                // Actualizar UI
+                await updateBalances();
+                await displayPacks();
+                await loadOwnedPacks();
+                
+            } catch (error) {
+                console.error('Error purchasing pack:', error);
+                showStatus('Purchase failed: ' + error.message, 'error');
+            }
+        }
+
+        async function openPack(packId) {
+            try {
+                showStatus('Abriendo pack...', 'info');
+                
+                // 1. Verificar que tiene packs sin abrir usando el contrato correcto
+                const unclaimed = await retryWithDelay(
+                    () => traitsCore.getUnclaimedPacks(userAddress, packId),
+                    5,
+                    2000
+                );
+                
+                if (unclaimed <= 0) {
+                    showStatus('No tienes packs sin abrir', 'error');
+                    return;
+                }
+
+                // 2. Verificar que el pack sigue activo
+                const packInfo = await retryWithDelay(
+                    () => traitsCore.getPackInfo(packId),
+                    5,
+                    2000
+                );
+                
+                if (!packInfo.active) {
+                    showStatus('Este pack ya no está activo', 'error');
+                    return;
+                }
+
+                // 3. Abrir el pack usando el contrato correcto
+                const tx = await retryWithDelay(
+                    () => packMinter.openPack(packId, {
+                        gasLimit: 1000000
+                    }),
+                    5,
+                    2000
+                );
+                
+                showStatus('Transacción enviada...', 'info');
+                await tx.wait();
+                
+                showStatus('¡Pack abierto exitosamente!', 'success');
+                
+                // Actualizar UI
+                await updateBalances();
+                await loadOwnedPacks();
+                await loadOwnedTraits();
+                
+            } catch (error) {
+                console.error('Error abriendo pack:', error);
+                showStatus('Error al abrir el pack: ' + (error.message || 'Error desconocido'), 'error');
+            }
+        }
+
+        function switchTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+
+            // Refresh data when switching tabs
+            if (tabName === 'inventory') {
+                loadOwnedPacks();
+            } else if (tabName === 'traits') {
+                loadOwnedTraits();
+            } else if (tabName === 'purchase') {
+                displayPacks();
+            }
+        }
+
+        function showStatus(message, type = 'info') {
+            const status = document.getElementById('status');
+            status.className = `status ${type}`;
+            status.innerHTML = message;
+            status.style.display = 'block';
+            
+            // Auto-hide after 5 seconds for success messages
+            if (type === 'success') {
+                setTimeout(() => {
+                    hideStatus();
+                }, 5000);
+            }
+        }
+
+        function hideStatus() {
+            document.getElementById('status').style.display = 'none';
+        }
+
+        // Auto-connect if already connected
+        window.addEventListener('load', function() {
+            if (typeof ethers === 'undefined') {
+                console.error('ethers.js not loaded');
+                showStatus('Error: ethers.js not loaded. Please refresh the page.', 'error');
+                return;
+            }
+            
+            if (window.ethereum && window.ethereum.selectedAddress) {
+                connectWallet();
+            }
+        });
+
+        // Listen for account changes
+        if (window.ethereum) {
+            window.ethereum.on('accountsChanged', function (accounts) {
+                if (accounts.length === 0) {
+                    // User disconnected
+                    document.getElementById('connect-section').style.display = 'block';
+                    document.getElementById('wallet-connected').style.display = 'none';
+                    userAddress = null;
+                } else {
+                    // Account changed
+                    connectWallet();
+                }
+            });
+
+            window.ethereum.on('chainChanged', function (chainId) {
+                // Reload page on chain change
+                window.location.reload();
+            });
+        }
+    </script>
+</body>
+</html>

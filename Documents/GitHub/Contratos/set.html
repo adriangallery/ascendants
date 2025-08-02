@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AdrianZERO NFT Mint</title>
+    <script src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+    <script>
+        // Verificar que ethers está disponible
+        window.addEventListener('load', function() {
+            if (typeof ethers === 'undefined') {
+                console.error('ethers.js no se ha cargado correctamente');
+                alert('Error: ethers.js no se ha cargado correctamente. Por favor, recarga la página.');
+            } else {
+                console.log('ethers.js cargado correctamente');
+            }
+        });
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #0a0a0a;
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            padding: 40px;
+            background: rgba(20, 20, 20, 0.8);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            font-size: 48px;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #00ff88, #00aaff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 40px;
+            font-size: 18px;
+        }
+
+        .info-box {
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .info-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .label {
+            color: #888;
+        }
+
+        .value {
+            color: #00ff88;
+            font-weight: 600;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        button {
+            flex: 1;
+            padding: 16px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #00ff88, #00aaff);
+            color: #000;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 255, 136, 0.3);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .btn-connect {
+            background: linear-gradient(45deg, #ff0088, #ff8800);
+        }
+
+        .btn-connect:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(255, 0, 136, 0.3);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .mint-controls {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+
+        .quantity-selector {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .quantity-selector button {
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .quantity-display {
+            font-size: 32px;
+            font-weight: 700;
+            color: #00ff88;
+            min-width: 50px;
+            text-align: center;
+        }
+
+        .total-cost {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .total-cost .amount {
+            font-size: 28px;
+            font-weight: 700;
+            color: #00aaff;
+        }
+
+        .status {
+            text-align: center;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .status.success {
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            color: #00ff88;
+        }
+
+        .status.error {
+            background: rgba(255, 0, 0, 0.1);
+            border: 1px solid rgba(255, 0, 0, 0.3);
+            color: #ff4444;
+        }
+
+        .status.info {
+            background: rgba(0, 170, 255, 0.1);
+            border: 1px solid rgba(0, 170, 255, 0.3);
+            color: #00aaff;
+        }
+
+        .wallet-info {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+        }
+
+        .address {
+            font-family: monospace;
+            font-size: 14px;
+            color: #00ff88;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #00ff88;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .tx-link {
+            color: #00aaff;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .tx-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AdrianZERO</h1>
+        <p class="subtitle">Genesis Mint</p>
+
+        <div class="info-box">
+            <div class="info-row">
+                <span class="label">Price per NFT:</span>
+                <span class="value">1,000 $ADRIAN</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Available:</span>
+                <span class="value" id="available">-</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Max per wallet:</span>
+                <span class="value">3</span>
+            </div>
+        </div>
+
+        <div id="wallet-info" class="wallet-info" style="display: none;">
+            <div>Connected: <span class="address" id="wallet-address"></span></div>
+            <div>$ADRIAN Balance: <span class="value" id="adrian-balance">-</span></div>
+        </div>
+
+        <div id="connect-section">
+            <button class="btn-connect" onclick="connectWallet()">Connect Wallet</button>
+        </div>
+
+        <div id="mint-section" style="display: none;">
+            <div class="mint-controls">
+                <div class="quantity-selector">
+                    <button class="btn-secondary" onclick="decreaseQuantity()">-</button>
+                    <div class="quantity-display" id="quantity">1</div>
+                    <button class="btn-secondary" onclick="increaseQuantity()">+</button>
+                </div>
+                
+                <div class="total-cost">
+                    Total: <span class="amount" id="total-cost">1,000</span> $ADRIAN
+                </div>
+
+                <div class="button-group">
+                    <button class="btn-secondary" onclick="approveTokens()">
+                        Approve $ADRIAN
+                    </button>
+                    <button class="btn-primary" onclick="mintNFTs()">
+                        Mint NFTs
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="status" class="status"></div>
+    </div>
+
+    <script>
+        // Contract addresses
+        const ADRIAN_TOKEN = "0x7E99075Ce287F1cF8cBCAaa6A1C7894e404fD7Ea";
+        const MINT_MODULE = "0x165d6bf979fd64da5e1b14d9161452671aaff440";
+        
+        // ABIs
+        const ERC20_ABI = [
+            "function approve(address spender, uint256 amount) returns (bool)",
+            "function balanceOf(address owner) view returns (uint256)",
+            "function allowance(address owner, address spender) view returns (uint256)"
+        ];
+        
+        const MINT_MODULE_ABI = [
+            "function mint(bytes32[] merkleProof)",
+            "function mintMultiple(uint256 quantity, bytes32[] merkleProof)",
+            "function getCurrentBatchInfo() view returns (uint256 batchId, string name, uint256 price, uint256 minted, uint256 maxSupply, bool active, uint256 startTime, uint256 endTime, bool useMerkleWhitelist)",
+            "function canMint() view returns (bool mintable, string reason, uint256 price, uint256 available)"
+        ];
+
+        let provider;
+        let signer;
+        let adrianToken;
+        let mintModule;
+        let currentQuantity = 1;
+        let pricePerNFT = ethers.utils.parseEther("1000");
+
+        function showStatus(message, type = 'info') {
+            const status = document.getElementById('status');
+            status.className = `status ${type}`;
+            status.innerHTML = message;
+            status.style.display = 'block';
+        }
+
+        function hideStatus() {
+            document.getElementById('status').style.display = 'none';
+        }
+
+        async function connectWallet() {
+            try {
+                if (!window.ethereum) {
+                    showStatus('Please install MetaMask!', 'error');
+                    return;
+                }
+
+                showStatus('Connecting wallet...', 'info');
+                
+                provider = new ethers.providers.Web3Provider(window.ethereum);
+                await provider.send("eth_requestAccounts", []);
+                signer = provider.getSigner();
+                
+                const address = await signer.getAddress();
+                const shortAddress = address.slice(0, 6) + '...' + address.slice(-4);
+                
+                // Initialize contracts
+                adrianToken = new ethers.Contract(ADRIAN_TOKEN, ERC20_ABI, signer);
+                mintModule = new ethers.Contract(MINT_MODULE, MINT_MODULE_ABI, signer);
+                
+                // Update UI
+                document.getElementById('wallet-address').textContent = shortAddress;
+                document.getElementById('connect-section').style.display = 'none';
+                document.getElementById('mint-section').style.display = 'block';
+                document.getElementById('wallet-info').style.display = 'block';
+                
+                // Load data
+                await updateBatchInfo();
+                await updateBalance();
+                
+                hideStatus();
+                
+            } catch (error) {
+                console.error(error);
+                showStatus('Failed to connect wallet: ' + error.message, 'error');
+            }
+        }
+
+        async function updateBatchInfo() {
+            try {
+                const canMintInfo = await mintModule.canMint();
+                const [mintable, reason, price, available] = canMintInfo;
+                
+                document.getElementById('available').textContent = `${available} / 3`;
+                
+                if (!mintable) {
+                    showStatus(`Cannot mint: ${reason}`, 'error');
+                }
+                
+            } catch (error) {
+                console.error('Error fetching batch info:', error);
+            }
+        }
+
+        async function updateBalance() {
+            try {
+                const address = await signer.getAddress();
+                const balance = await adrianToken.balanceOf(address);
+                const formatted = ethers.utils.formatEther(balance);
+                document.getElementById('adrian-balance').textContent = parseFloat(formatted).toLocaleString();
+            } catch (error) {
+                console.error('Error fetching balance:', error);
+            }
+        }
+
+        function increaseQuantity() {
+            if (currentQuantity < 3) {
+                currentQuantity++;
+                updateQuantityDisplay();
+            }
+        }
+
+        function decreaseQuantity() {
+            if (currentQuantity > 1) {
+                currentQuantity--;
+                updateQuantityDisplay();
+            }
+        }
+
+        function updateQuantityDisplay() {
+            document.getElementById('quantity').textContent = currentQuantity;
+            document.getElementById('total-cost').textContent = (currentQuantity * 1000).toLocaleString();
+        }
+
+        async function approveTokens() {
+            try {
+                showStatus('Approving $ADRIAN tokens...', 'info');
+                
+                const amount = pricePerNFT.mul(currentQuantity);
+                const tx = await adrianToken.approve(MINT_MODULE, amount);
+                
+                showStatus(`Approving... <a href="https://routescan.io/tx/${tx.hash}" target="_blank" class="tx-link">View TX</a>`, 'info');
+                
+                await tx.wait();
+                
+                showStatus('Tokens approved successfully!', 'success');
+                
+            } catch (error) {
+                console.error(error);
+                showStatus('Approval failed: ' + error.message, 'error');
+            }
+        }
+
+        async function mintNFTs() {
+            try {
+                showStatus('Checking approval...', 'info');
+                
+                const address = await signer.getAddress();
+                const requiredAmount = pricePerNFT.mul(currentQuantity);
+                const allowance = await adrianToken.allowance(address, MINT_MODULE);
+                
+                if (allowance.lt(requiredAmount)) {
+                    showStatus('Please approve $ADRIAN tokens first!', 'error');
+                    return;
+                }
+                
+                showStatus('Minting NFTs...', 'info');
+                
+                let tx;
+                if (currentQuantity === 1) {
+                    tx = await mintModule.mint([]);
+                } else {
+                    tx = await mintModule.mintMultiple(currentQuantity, []);
+                }
+                
+                showStatus(`Minting... <a href="https://routescan.io/tx/${tx.hash}" target="_blank" class="tx-link">View TX</a>`, 'info');
+                
+                await tx.wait();
+                
+                showStatus(`Successfully minted ${currentQuantity} AdrianZERO NFT${currentQuantity > 1 ? 's' : ''}!`, 'success');
+                
+                // Update info
+                await updateBatchInfo();
+                await updateBalance();
+                
+            } catch (error) {
+                console.error(error);
+                showStatus('Mint failed: ' + error.message, 'error');
+            }
+        }
+
+        // Auto-connect if already connected
+        if (window.ethereum && window.ethereum.selectedAddress) {
+            connectWallet();
+        }
+    </script>
+</body>
+</html>

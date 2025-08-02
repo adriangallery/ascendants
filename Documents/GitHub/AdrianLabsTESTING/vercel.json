@@ -1,0 +1,25 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "pages/api/**/*.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/render/(.*)",
+      "dest": "/api/render/$1",
+      "headers": {
+        "Cache-Control": "public, max-age=3600, s-maxage=86400"
+      }
+    },
+    {
+      "src": "/api/metadata/(.*)",
+      "dest": "/api/metadata/$1",
+      "headers": {
+        "Cache-Control": "public, max-age=3600, s-maxage=86400"
+      }
+    }
+  ]
+} 

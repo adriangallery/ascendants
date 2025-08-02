@@ -607,10 +607,10 @@
 </head>
 <body>
     <div class="container">
-        <div class="header">
+    <div class="header">
             <h1>AdrianLab</h1>
             <p class="subtitle">Trait Builder & Character Customization</p>
-        </div>
+    </div>
 
         <div class="wallet-section">
             <div id="connect-section">
@@ -618,59 +618,59 @@
             </div>
             <div id="wallet-connected" style="display: none;">
                 <div class="wallet-info">
-                    <div class="wallet-address" id="wallet-address"></div>
-                    <div class="balance-info">
-                        <div class="balance-item">
+        <div class="wallet-address" id="wallet-address"></div>
+        <div class="balance-info">
+            <div class="balance-item">
                             <div class="balance-label">AdrianZERO Tokens</div>
                             <div class="balance-value" id="token-balance">-</div>
-                        </div>
-                        <div class="balance-item">
+            </div>
+            <div class="balance-item">
                             <div class="balance-label">Total Traits</div>
                             <div class="balance-value" id="trait-balance">-</div>
                         </div>
                     </div>
-                </div>
             </div>
         </div>
+    </div>
 
-        <div class="builder-grid">
+    <div class="builder-grid">
             <!-- Tokens Section -->
             <div class="section">
-                <div class="section-header">
+            <div class="section-header">
                     <h2 class="section-title">Your AdrianZERO</h2>
                     <button class="refresh-btn" onclick="loadUserTokens()">↻</button>
-                </div>
+            </div>
                 <div class="token-grid scrollbar" id="token-grid">
                     <div class="empty-state">
                         <h3>Connect wallet to view your tokens</h3>
                     </div>
                 </div>
-            </div>
+        </div>
 
             <!-- Traits Section -->
             <div class="section">
-                <div class="section-header">
+            <div class="section-header">
                     <h2 class="section-title">Available Traits</h2>
                     <button class="refresh-btn" onclick="loadAvailableTraits()">↻</button>
-                </div>
+            </div>
                 <div class="traits-container scrollbar" id="traits-container">
                     <div class="empty-state">
                         <h3>Connect wallet to view your traits</h3>
                     </div>
-                </div>
-            </div>
+        </div>
+    </div>
 
             <!-- Preview Section -->
             <div class="section">
                 <div class="section-header">
                     <h2 class="section-title">Character Preview</h2>
-                </div>
+        </div>
                 <div class="preview-container" id="preview-container">
                     <div class="preview-placeholder">
                         Select an AdrianZERO token to preview
-                    </div>
-                </div>
-                
+        </div>
+    </div>
+
                 <div class="equipped-summary" id="equipped-summary" style="display: none;">
                     <div class="summary-title">Currently Equipped</div>
                     <div id="equipped-list"></div>
@@ -679,7 +679,7 @@
                 <div class="action-buttons">
                     <button class="action-btn btn-primary" id="equip-btn" onclick="equipSelectedTrait()" disabled>
                         Equip Selected Trait
-                    </button>
+    </button>
                     <button class="action-btn btn-danger" onclick="unequipAllTraits()" disabled id="unequip-all-btn">
                         Unequip All Traits
                     </button>
@@ -705,12 +705,12 @@
     <div id="status" class="status"></div>
 
     <script>
-        // ===== CORRECTED CONTRACT ADDRESSES =====
+        // Contract addresses
         const ADRIANLAB_CORE = "0x6e369bf0e4e0c106192d606fb6d85836d684da75"; // AdrianLabCore
         const TRAITS_CORE = "0xb72be829f06a6c5baf99cdae204ffd99ea4a6c9a";     // AdrianTraitsCore
         const TRAITS_EXTENSIONS = "0x756e1a4fC47cbDe7d503b6c1B0353aDa94B41630"; // AdrianTraitsExtensions
 
-        // ===== COMPLETE ABIs =====
+        // Complete ABIs
         const ADRIANLAB_CORE_ABI = [
             "function balanceOf(address owner) view returns (uint256)",
             "function tokenOfOwnerByIndex(address owner, uint256 index) view returns (uint256)",
@@ -735,7 +735,7 @@
             "function getCategories() view returns (string[])"
         ];
 
-        // ===== GLOBAL VARIABLES =====
+        // Global variables
         let provider;
         let signer;
         let userAddress;
@@ -756,7 +756,7 @@
         const RETRY_ATTEMPTS = 5;
         const RETRY_DELAY = 2000;
 
-        // ===== UTILITY FUNCTIONS =====
+        // Utility functions
         async function sleep(ms) {
             return new Promise(resolve => setTimeout(resolve, ms));
         }
@@ -802,7 +802,7 @@
             document.getElementById('status').style.display = 'none';
         }
 
-        // ===== WALLET CONNECTION =====
+        // Connect wallet function
         async function connectWallet() {
             try {
                 if (!window.ethereum) {
@@ -812,37 +812,39 @@
 
                 showStatus('Connecting wallet...', 'info');
                 
+                // Request account access
+                const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+                userAddress = accounts[0];
+                
+                // Set up provider and signer
                 provider = new ethers.providers.Web3Provider(window.ethereum);
-                await provider.send("eth_requestAccounts", []);
                 signer = provider.getSigner();
-                
-                userAddress = await signer.getAddress();
-                const shortAddress = userAddress.slice(0, 6) + '...' + userAddress.slice(-4);
-                
+
                 // Initialize contracts
                 adrianLabCore = new ethers.Contract(ADRIANLAB_CORE, ADRIANLAB_CORE_ABI, signer);
                 traitsCore = new ethers.Contract(TRAITS_CORE, TRAITS_CORE_ABI, signer);
                 traitsExtensions = new ethers.Contract(TRAITS_EXTENSIONS, TRAITS_EXTENSIONS_ABI, signer);
-                
+
                 // Update UI
-                document.getElementById('wallet-address').textContent = shortAddress;
+                document.getElementById('wallet-address').textContent = 
+                    `${userAddress.substring(0, 6)}...${userAddress.substring(38)}`;
                 document.getElementById('connect-section').style.display = 'none';
                 document.getElementById('wallet-connected').style.display = 'block';
-                
+
                 // Load data
                 await loadCategories();
                 await loadUserTokens();
                 await loadAvailableTraits();
-                
+
                 hideStatus();
-                
+
             } catch (error) {
                 console.error('Connection error:', error);
                 showStatus('Failed to connect wallet: ' + error.message, 'error');
             }
         }
 
-        // ===== DATA LOADING FUNCTIONS =====
+        // Data loading functions
         async function loadCategories() {
             try {
                 categories = await retryWithDelay(() => traitsExtensions.getCategories());
@@ -858,7 +860,7 @@
             try {
                 showStatus('Loading your AdrianZERO tokens...', 'info');
                 
-                const balance = await retryWithDelay(() => adrianLabCore.balanceOf(userAddress));
+                const balance = await adrianLabCore.balanceOf(userAddress);
                 document.getElementById('token-balance').textContent = balance.toString();
                 
                 userTokens = [];
@@ -873,36 +875,36 @@
                 
                 for (let i = 0; i < balance.toNumber(); i++) {
                     try {
-                        const tokenId = await retryWithDelay(() => adrianLabCore.tokenOfOwnerByIndex(userAddress, i));
+                        const tokenId = await adrianLabCore.tokenOfOwnerByIndex(userAddress, i);
                         userTokens.push(tokenId.toNumber());
                     } catch (error) {
                         console.error(`Error loading token at index ${i}:`, error);
-                    }
+                        }
                 }
                 
                 await displayTokens();
                 hideStatus();
                 
-            } catch (error) {
+                    } catch (error) {
                 console.error('Error loading tokens:', error);
                 showStatus('Error loading tokens: ' + error.message, 'error');
-            }
-        }
+                    }
+                }
 
         async function displayTokens() {
             const container = document.getElementById('token-grid');
             container.innerHTML = '';
             
-            for (const tokenId of userTokens) {
-                const tokenCard = document.createElement('div');
-                tokenCard.className = 'token-card';
-                tokenCard.setAttribute('data-token-id', tokenId);
+                for (const tokenId of userTokens) {
+                    const tokenCard = document.createElement('div');
+                    tokenCard.className = 'token-card';
+                    tokenCard.setAttribute('data-token-id', tokenId);
                 
                 // Load equipped traits for this token
                 const equipped = await loadEquippedTraits(tokenId);
                 
-                tokenCard.innerHTML = `
-                    <div class="token-id">AdrianZERO #${tokenId}</div>
+                    tokenCard.innerHTML = `
+                        <div class="token-id">AdrianZERO #${tokenId}</div>
                     <div class="token-skin">Click to select</div>
                     <div class="equipped-traits">
                         ${equipped.map(trait => `
@@ -936,7 +938,7 @@
                                 traitId: traitIds[i].toNumber(),
                                 name: name
                             });
-                        } catch (error) {
+            } catch (error) {
                             console.error(`Error loading trait ${traitIds[i]}:`, error);
                         }
                     }
@@ -960,17 +962,17 @@
                 
                 userTraits.clear();
                 
-                // Cargar traits en lotes más pequeños para evitar rate limiting
-                const BATCH_SIZE = 10; // Reducido de 25 a 10
-                const MAX_TRAIT_ID = 1000;
+                // Load traits in smaller batches with a limit of 50
+                const BATCH_SIZE = 5; // Reduced batch size
+                const MAX_TRAITS = 50; // Limit total traits to load
                 let totalTraits = 0;
-                
-                for (let start = 1; start <= MAX_TRAIT_ID; start += BATCH_SIZE) {
+
+                for (let start = 1; start <= MAX_TRAITS; start += BATCH_SIZE) {
                     const promises = [];
-                    for (let traitId = start; traitId < start + BATCH_SIZE && traitId <= MAX_TRAIT_ID; traitId++) {
+                    for (let traitId = start; traitId < start + BATCH_SIZE && traitId <= MAX_TRAITS; traitId++) {
                         promises.push(loadTraitIfOwned(traitId));
                     }
-                    
+
                     const results = await Promise.allSettled(promises);
                     const validTraits = results
                         .filter(result => result.status === 'fulfilled' && result.value)
@@ -978,7 +980,7 @@
                     
                     totalTraits += validTraits.length;
                     
-                    // Actualizar UI progresivamente
+                    // Update UI progressively
                     if (validTraits.length > 0) {
                         if (container.querySelector('.loading')) {
                             container.innerHTML = '';
@@ -986,13 +988,13 @@
                         }
                         updateTraitDisplay();
                     }
-                    
-                    // Esperar más tiempo entre lotes
-                    if (start + BATCH_SIZE <= MAX_TRAIT_ID) {
-                        await sleep(2000); // Aumentado de 1000 a 2000
+
+                    // Wait between batches to avoid rate limiting
+                    if (start + BATCH_SIZE <= MAX_TRAITS) {
+                        await new Promise(resolve => setTimeout(resolve, 2000)); // Increased delay
                     }
                 }
-                
+
                 document.getElementById('trait-balance').textContent = totalTraits;
                 
                 if (totalTraits === 0) {
@@ -1000,7 +1002,7 @@
                 }
                 
                 hideStatus();
-                
+
             } catch (error) {
                 console.error('Error loading traits:', error);
                 showStatus('Error loading traits: ' + error.message, 'error');
@@ -1009,22 +1011,18 @@
 
         async function loadTraitIfOwned(traitId) {
             try {
-                // Primero verificar si el trait es válido
-                const isValid = await retryWithDelay(() => 
-                    traitsCore.isValidTraitId(traitId)
-                );
+                // First check if the trait is valid
+                const isValid = await retryWithDelay(() => traitsCore.isValidTraitId(traitId));
 
                 if (!isValid) {
                     return null;
                 }
 
-                // Luego verificar el balance
-                const balance = await retryWithDelay(() => 
-                    traitsCore.balanceOf(userAddress, traitId)
-                );
+                // Then check balance
+                const balance = await retryWithDelay(() => traitsCore.balanceOf(userAddress, traitId));
                 
                 if (balance.gt(0)) {
-                    // Obtener información del trait
+                    // Get trait information
                     const [name, category, isTemp] = await Promise.all([
                         retryWithDelay(() => traitsCore.getName(traitId)),
                         retryWithDelay(() => traitsCore.getCategory(traitId)),
@@ -1037,7 +1035,7 @@
                             name: name,
                             category: category,
                             balance: balance.toNumber(),
-                            isTemporary: isTemp[1] // El segundo elemento del array es isTemp
+                            isTemporary: isTemp[1]
                         };
                         
                         userTraits.set(traitId, traitData);
@@ -1106,7 +1104,7 @@
             displayTraitsByCategory();
         }
 
-        // ===== SELECTION FUNCTIONS =====
+        // Selection functions
         function selectToken(tokenId) {
             selectedTokenId = tokenId;
             
@@ -1190,13 +1188,13 @@
             }
         }
 
-        // ===== EQUIPMENT FUNCTIONS =====
+        // Equipment functions
         async function equipSelectedTrait() {
             if (!selectedTokenId || !selectedTraitId || !selectedTraitInfo) {
                 showStatus('Please select both a token and a trait', 'warning');
                 return;
             }
-            
+
             // Check for temporary trait confirmation
             if (selectedTraitInfo.isTemporary) {
                 pendingTempTrait = selectedTraitInfo;
@@ -1205,7 +1203,7 @@
                 document.getElementById('temp-trait-modal').style.display = 'flex';
                 return;
             }
-            
+
             await performEquip();
         }
 
@@ -1271,9 +1269,9 @@
             
             if (!selectedTokenId) {
                 showStatus('Please select a token first', 'warning');
-                return;
-            }
-            
+                        return;
+                    }
+
             try {
                 showStatus(`Unequipping ${category} trait...`, 'info');
                 
@@ -1321,7 +1319,7 @@
                             gasLimit: 300000
                         })
                     );
-                    await tx.wait();
+                await tx.wait();
                     await sleep(1000); // Delay between transactions
                 }
                 
@@ -1332,14 +1330,14 @@
                 await displayTokens();
                 updatePreview();
                 updateTraitDisplay();
-                
+
             } catch (error) {
                 console.error('Error unequipping all traits:', error);
                 showStatus('Failed to unequip all traits: ' + error.message, 'error');
             }
         }
 
-        // ===== EVENT LISTENERS =====
+        // Event listeners
         window.addEventListener('load', function() {
             if (typeof ethers === 'undefined') {
                 console.error('ethers.js not loaded');
@@ -1362,8 +1360,8 @@
                     selectedTraitId = null;
                 } else {
                     connectWallet();
-                }
-            });
+            }
+        });
 
             window.ethereum.on('chainChanged', function (chainId) {
                 window.location.reload();
@@ -1371,4 +1369,4 @@
         }
     </script>
 </body>
-</html>
+</html> 

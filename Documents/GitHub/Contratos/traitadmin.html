@@ -1,0 +1,1247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AdrianLab Trait Admin</title>
+    <script src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 48px;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #00ff88, #00aaff, #ff0088);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-size: 200% 200%;
+            animation: gradient 3s ease infinite;
+        }
+
+        @keyframes gradient {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .subtitle {
+            color: #888;
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+
+        .wallet-section {
+            background: rgba(20, 20, 20, 0.8);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+            text-align: center;
+        }
+
+        .connect-btn {
+            padding: 16px 32px;
+            font-size: 18px;
+            font-weight: 600;
+            background: linear-gradient(45deg, #ff0088, #ff8800);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .connect-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(255, 0, 136, 0.3);
+        }
+
+        .wallet-info {
+            color: #00ff88;
+            font-family: monospace;
+            font-size: 16px;
+        }
+
+        .search-section {
+            background: rgba(20, 20, 20, 0.8);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+        }
+
+        .search-inputs {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .search-inputs input, .search-inputs select {
+            padding: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 16px;
+        }
+
+        .search-inputs input::placeholder {
+            color: #888;
+        }
+
+        .search-inputs option {
+            background: #1a1a2e;
+            color: #fff;
+        }
+
+        .quick-ranges {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .range-btn {
+            padding: 10px 20px;
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            border-radius: 8px;
+            color: #00ff88;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .range-btn:hover {
+            background: rgba(0, 255, 136, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .search-btn {
+            padding: 12px 32px;
+            background: linear-gradient(45deg, #00ff88, #00aaff);
+            color: #000;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .search-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 255, 136, 0.3);
+        }
+
+        .results-summary {
+            background: rgba(0, 170, 255, 0.1);
+            border: 1px solid rgba(0, 170, 255, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+            color: #00aaff;
+        }
+
+        .traits-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+            gap: 20px;
+        }
+
+        .trait-card {
+            background: rgba(20, 20, 20, 0.8);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 25px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .trait-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(0, 255, 136, 0.3);
+            box-shadow: 0 20px 40px rgba(0, 255, 136, 0.1);
+        }
+
+        .trait-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .trait-id {
+            font-size: 20px;
+            font-weight: 700;
+            color: #00ff88;
+        }
+
+        .trait-type-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .trait-type-badge.trait {
+            background: rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+        }
+
+        .trait-type-badge.serum {
+            background: rgba(255, 0, 136, 0.2);
+            color: #ff0088;
+        }
+
+        .trait-type-badge.pack {
+            background: rgba(255, 136, 0, 0.2);
+            color: #ff8800;
+        }
+
+        .trait-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 10px;
+        }
+
+        .trait-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .trait-detail {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        .trait-detail-label {
+            font-size: 12px;
+            color: #888;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .trait-detail-value {
+            color: #fff;
+            font-weight: 500;
+            word-break: break-all;
+        }
+
+        .trait-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 12px;
+        }
+
+        .btn-edit {
+            background: linear-gradient(45deg, #00aaff, #0088ff);
+            color: #fff;
+        }
+
+        .btn-edit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0, 170, 255, 0.3);
+        }
+
+        .btn-copy {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-copy:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .btn-view {
+            background: rgba(0, 255, 136, 0.1);
+            color: #00ff88;
+            border: 1px solid rgba(0, 255, 136, 0.3);
+        }
+
+        .btn-view:hover {
+            background: rgba(0, 255, 136, 0.2);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #888;
+            font-size: 18px;
+        }
+
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #00ff88;
+            animation: spin 1s ease-in-out infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 60px 20px;
+            color: #888;
+        }
+
+        .no-results h3 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #fff;
+        }
+
+        .status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            max-width: 400px;
+            padding: 16px 20px;
+            border-radius: 12px;
+            z-index: 1000;
+            display: none;
+            animation: slideIn 0.3s ease;
+            font-weight: 600;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .status.success {
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            color: #00ff88;
+        }
+
+        .status.error {
+            background: rgba(255, 0, 0, 0.1);
+            border: 1px solid rgba(255, 0, 0, 0.3);
+            color: #ff4444;
+        }
+
+        .status.info {
+            background: rgba(0, 170, 255, 0.1);
+            border: 1px solid rgba(0, 170, 255, 0.3);
+            color: #00aaff;
+        }
+
+        .tx-link {
+            color: #00aaff;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .tx-link:hover {
+            text-decoration: underline;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 2000;
+            backdrop-filter: blur(10px);
+        }
+
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(20, 20, 20, 0.95);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #00ff88;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: #888;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        .close-btn:hover {
+            color: #fff;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            color: #888;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 12px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 16px;
+        }
+
+        .form-input::placeholder {
+            color: #888;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: flex-end;
+        }
+
+        .btn-cancel {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-save {
+            background: linear-gradient(45deg, #00ff88, #00aaff);
+            color: #000;
+        }
+
+        .range-info {
+            background: rgba(0, 170, 255, 0.1);
+            border: 1px solid rgba(0, 170, 255, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            color: #00aaff;
+            font-size: 14px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .search-inputs {
+                grid-template-columns: 1fr;
+            }
+            
+            .traits-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .quick-ranges {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>AdrianLab</h1>
+            <p class="subtitle">Trait Administration Panel</p>
+        </div>
+
+        <div class="wallet-section">
+            <div id="connect-section">
+                <button class="connect-btn" onclick="connectWallet()">Connect Wallet</button>
+            </div>
+            <div id="wallet-connected" style="display: none;">
+                <div class="wallet-info" id="wallet-address"></div>
+            </div>
+        </div>
+
+        <div class="search-section">
+            <h2 style="margin-bottom: 20px; color: #fff;">Search Traits & Assets</h2>
+            
+            <div class="range-info">
+                <strong>Asset Ranges:</strong><br>
+                • Traits: 1 - 99,999<br>
+                • Packs: 100,000 - 109,999<br>
+                • Serums: 110,000+
+            </div>
+            
+            <div class="search-inputs">
+                <input type="number" id="search-from-id" placeholder="From ID" min="1">
+                <input type="number" id="search-to-id" placeholder="To ID" min="1">
+                <input type="text" id="filter-category" placeholder="Filter by category">
+                <input type="text" id="filter-name" placeholder="Filter by name">
+                <select id="filter-type">
+                    <option value="">All Types</option>
+                    <option value="TRAIT">Traits</option>
+                    <option value="PACK">Packs</option>
+                    <option value="SERUM">Serums</option>
+                </select>
+                <button class="search-btn" onclick="searchTraits()">Search</button>
+            </div>
+            
+            <div class="quick-ranges">
+                <button class="range-btn" onclick="searchQuickRange('traits')">Traits (1-99,999)</button>
+                <button class="range-btn" onclick="searchQuickRange('packs')">Packs (100,000-109,999)</button>
+                <button class="range-btn" onclick="searchQuickRange('serums')">Serums (110,000+)</button>
+                <button class="range-btn" onclick="searchQuickRange('sample')">Sample (1-100)</button>
+            </div>
+        </div>
+
+        <div id="results-summary" class="results-summary" style="display: none;"></div>
+
+        <div id="traits-loading" class="loading" style="display: none;">
+            Searching traits...
+        </div>
+
+        <div id="traits-results" class="traits-grid"></div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="edit-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Edit Asset</h3>
+                <button class="close-btn" onclick="closeEditModal()">&times;</button>
+            </div>
+            <form id="edit-form">
+                <div class="form-group">
+                    <label class="form-label">Asset ID</label>
+                    <input type="text" id="edit-id" class="form-input" readonly>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Name</label>
+                    <input type="text" id="edit-name" class="form-input" readonly>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Category</label>
+                    <input type="text" id="edit-category" class="form-input" readonly>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">IPFS URI</label>
+                    <input type="text" id="edit-uri" class="form-input" placeholder="ipfs://...">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-cancel" onclick="closeEditModal()">Cancel</button>
+                    <button type="button" class="btn btn-save" onclick="saveAssetChanges()">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="status" class="status"></div>
+
+    <script>
+        // Contract addresses - ACTUALIZADAS
+        const TRAITS_CORE = "0xcfce13cd51283b5ef3ca72a1f7bdc942ba0128fe";
+        const TRAITS_EXTENSIONS = "0x756e1a4fC47cbDe7d503b6c1B0353aDa94B41630";
+        const LAB_VIEW = "0xYourLabViewAddress"; // Actualizar con la dirección real
+
+        // ABIs
+        const TRAITS_CORE_ABI = [
+            "function getName(uint256 assetId) view returns (string)",
+            "function getCategory(uint256 assetId) view returns (string)",
+            "function getTraitInfo(uint256 assetId) view returns (string category, bool isTemp)",
+            "function totalMintedPerAsset(uint256 assetId) view returns (uint256)",
+            "function assets(uint256 assetId) view returns (tuple(string name, string category, string ipfsPath, bool tempFlag, uint256 maxSupply, uint8 assetType, string metadata))",
+            "function setAssetURI(uint256 assetId, string uri) external",
+            "function isValidTraitId(uint256 id) view returns (bool)",
+            "function isValidPackId(uint256 id) view returns (bool)",
+            "function isValidSerumId(uint256 id) view returns (bool)"
+        ];
+
+        const TRAITS_EXTENSIONS_ABI = [
+            "function getAssetURI(uint256 tokenId) view returns (string)",
+            "function traitInfo(uint256 traitId) view returns (string name, string category, uint256 maxSupply, bool isPack)",
+            "function traitSupply(uint256 traitId) view returns (uint256)",
+            "function setAssetURI(uint256 tokenId, string uri) external"
+        ];
+
+        // Global variables
+        let provider;
+        let signer;
+        let traitsCore;
+        let traitsExtensions;
+        let userAddress;
+        let currentEditAsset = null;
+
+        async function connectWallet() {
+            try {
+                if (!window.ethereum) {
+                    showStatus('Please install MetaMask!', 'error');
+                    return;
+                }
+
+                showStatus('Connecting wallet...', 'info');
+                
+                provider = new ethers.providers.Web3Provider(window.ethereum);
+                await provider.send("eth_requestAccounts", []);
+                signer = provider.getSigner();
+                
+                userAddress = await signer.getAddress();
+                const shortAddress = userAddress.slice(0, 6) + '...' + userAddress.slice(-4);
+                
+                // Initialize contracts
+                traitsCore = new ethers.Contract(TRAITS_CORE, TRAITS_CORE_ABI, signer);
+                traitsExtensions = new ethers.Contract(TRAITS_EXTENSIONS, TRAITS_EXTENSIONS_ABI, signer);
+                
+                // Update UI
+                document.getElementById('wallet-address').textContent = `Connected: ${shortAddress}`;
+                document.getElementById('connect-section').style.display = 'none';
+                document.getElementById('wallet-connected').style.display = 'block';
+                
+                showStatus('Wallet connected successfully!', 'success');
+                
+            } catch (error) {
+                console.error(error);
+                showStatus('Failed to connect wallet: ' + error.message, 'error');
+            }
+        }
+
+        function searchQuickRange(type) {
+            const fromInput = document.getElementById('search-from-id');
+            const toInput = document.getElementById('search-to-id');
+            
+            switch (type) {
+                case 'traits':
+                    fromInput.value = '1';
+                    toInput.value = '99999';
+                    break;
+                case 'packs':
+                    fromInput.value = '100000';
+                    toInput.value = '109999';
+                    break;
+                case 'serums':
+                    fromInput.value = '110000';
+                    toInput.value = '120000';
+                    break;
+                case 'sample':
+                    fromInput.value = '1';
+                    toInput.value = '100';
+                    break;
+            }
+            
+            searchTraits();
+        }
+
+        async function searchTraits() {
+            if (!traitsCore) {
+                showStatus('Please connect your wallet first!', 'error');
+                return;
+            }
+
+            const fromId = parseInt(document.getElementById('search-from-id').value) || 1;
+            const toId = parseInt(document.getElementById('search-to-id').value) || 100;
+            
+            if (fromId > toId) {
+                showStatus('From ID cannot be greater than To ID', 'error');
+                return;
+            }
+            
+            if (toId - fromId > 1000) {
+                showStatus('Search range too large. Please limit to 1000 IDs at a time.', 'error');
+                return;
+            }
+            
+            const loadingEl = document.getElementById('traits-loading');
+            const resultsEl = document.getElementById('traits-results');
+            const summaryEl = document.getElementById('results-summary');
+            
+            loadingEl.style.display = 'block';
+            resultsEl.innerHTML = '';
+            summaryEl.style.display = 'none';
+            
+            try {
+                showStatus(`Searching assets from ${fromId} to ${toId}...`, 'info');
+                
+                const foundAssets = [];
+                const batchSize = 20; // Smaller batches to avoid rate limiting
+                
+                for (let start = fromId; start <= toId; start += batchSize) {
+                    const end = Math.min(start + batchSize - 1, toId);
+                    const batch = await searchAssetsBatch(start, end);
+                    foundAssets.push(...batch);
+                    
+                    // Update progress
+                    const progress = Math.round(((end - fromId) / (toId - fromId)) * 100);
+                    showStatus(`Searching... ${progress}%`, 'info');
+                    
+                    // Small delay between batches
+                    if (end < toId) {
+                        await new Promise(resolve => setTimeout(resolve, 200));
+                    }
+                }
+                
+                loadingEl.style.display = 'none';
+                displayAssetsResults(foundAssets, fromId, toId);
+                
+                if (foundAssets.length > 0) {
+                    showStatus(`Found ${foundAssets.length} assets`, 'success');
+                } else {
+                    showStatus(`No assets found in range ${fromId}-${toId}`, 'info');
+                }
+                
+            } catch (error) {
+                loadingEl.style.display = 'none';
+                console.error('Error searching assets:', error);
+                showStatus('Error searching assets: ' + error.message, 'error');
+            }
+        }
+
+        async function searchAssetsBatch(fromId, toId) {
+            const foundAssets = [];
+            
+            for (let id = fromId; id <= toId; id++) {
+                try {
+                    // Try to get basic info
+                    const name = await traitsCore.getName(id);
+                    
+                    if (name && name.trim() !== '') {
+                        const assetData = await getAssetFullInfo(id);
+                        if (assetData) {
+                            foundAssets.push(assetData);
+                        }
+                    }
+                } catch (error) {
+                    // Asset doesn't exist, continue
+                    continue;
+                }
+            }
+            
+            return foundAssets;
+        }
+
+        async function getAssetFullInfo(assetId) {
+            try {
+                // Get basic info from TraitsCore
+                const name = await traitsCore.getName(assetId);
+                const category = await traitsCore.getCategory(assetId);
+                
+                let totalMinted = 0;
+                let maxSupply = 0;
+                let ipfsPath = '';
+                let isTemporary = false;
+                let assetType = 0;
+                let metadata = '';
+                
+                try {
+                    totalMinted = await traitsCore.totalMintedPerAsset(assetId);
+                    totalMinted = totalMinted.toString();
+                } catch (e) {
+                    totalMinted = '0';
+                }
+
+                try {
+                    const [traitCategory, isTemp] = await traitsCore.getTraitInfo(assetId);
+                    isTemporary = isTemp;
+                } catch (e) {
+                    // Might not be implemented
+                }
+
+                try {
+                    const assetData = await traitsCore.assets(assetId);
+                    maxSupply = assetData.maxSupply ? assetData.maxSupply.toString() : '0';
+                    ipfsPath = assetData.ipfsPath || '';
+                    assetType = assetData.assetType || 0;
+                    metadata = assetData.metadata || '';
+                } catch (e) {
+                    // assets() might not be accessible or not exist
+                }
+
+                // Try to get URI from Extensions
+                try {
+                    const uri = await traitsExtensions.getAssetURI(assetId);
+                    if (uri && uri.trim() !== '' && !ipfsPath) {
+                        ipfsPath = uri;
+                    }
+                } catch (e) {
+                    // Extensions might not have this asset
+                }
+
+                // Try to get additional info from Extensions
+                try {
+                    const [extName, extCategory, extMaxSupply, isPack] = await traitsExtensions.traitInfo(assetId);
+                    if (extName && extName.trim() !== '' && (!name || name.trim() === '')) {
+                        name = extName;
+                    }
+                    if (extMaxSupply && extMaxSupply.toString() !== '0' && maxSupply === '0') {
+                        maxSupply = extMaxSupply.toString();
+                    }
+                } catch (e) {
+                    // Extensions might not have this trait
+                }
+
+                // Determine asset type based on ID range
+                let assetTypeString = 'TRAIT';
+                let typeBadgeClass = 'trait';
+                
+                if (assetId >= 110000) {
+                    assetTypeString = 'SERUM';
+                    typeBadgeClass = 'serum';
+                } else if (assetId >= 100000) {
+                    assetTypeString = 'PACK';
+                    typeBadgeClass = 'pack';
+                }
+                
+                return {
+                    id: assetId,
+                    name: name || 'Unnamed',
+                    category: category || 'Uncategorized',
+                    totalMinted: totalMinted,
+                    maxSupply: maxSupply,
+                    ipfsPath: ipfsPath,
+                    isTemporary: isTemporary,
+                    assetType: assetType,
+                    assetTypeString: assetTypeString,
+                    typeBadgeClass: typeBadgeClass,
+                    metadata: metadata
+                };
+                
+            } catch (error) {
+                console.error(`Error getting info for asset ${assetId}:`, error);
+                return null;
+            }
+        }
+
+        function displayAssetsResults(assets, fromId, toId) {
+            const resultsEl = document.getElementById('traits-results');
+            const summaryEl = document.getElementById('results-summary');
+            
+            if (assets.length === 0) {
+                resultsEl.innerHTML = `
+                    <div class="no-results">
+                        <h3>No assets found</h3>
+                        <p>No assets found in range ${fromId}-${toId}</p>
+                        <p>Try a different range or check if the contracts are deployed correctly.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Apply filters
+            const filteredAssets = applyAssetFilters(assets);
+            
+            // Show summary
+            summaryEl.innerHTML = `
+                <strong>Search Results:</strong> Found ${assets.length} assets in range ${fromId}-${toId}
+                ${filteredAssets.length !== assets.length ? ` (${filteredAssets.length} shown after filters)` : ''}
+            `;
+            summaryEl.style.display = 'block';
+            
+            if (filteredAssets.length === 0) {
+                resultsEl.innerHTML = `
+                    <div class="no-results">
+                        <h3>No results after filtering</h3>
+                        <p>Try adjusting your filters or search criteria.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Display assets
+            let html = '';
+            filteredAssets.forEach(asset => {
+                html += createAssetCard(asset);
+            });
+            
+            resultsEl.innerHTML = html;
+        }
+
+        function createAssetCard(asset) {
+            const supplyText = asset.maxSupply !== '0' ? 
+                `${asset.totalMinted} / ${asset.maxSupply}` : 
+                `${asset.totalMinted} (unlimited)`;
+
+            return `
+                <div class="trait-card">
+                    <div class="trait-header">
+                        <span class="trait-id">#${asset.id}</span>
+                        <span class="trait-type-badge ${asset.typeBadgeClass}">${asset.assetTypeString}</span>
+                    </div>
+                    
+                    <div class="trait-name">${asset.name}</div>
+                    
+                    <div class="trait-details">
+                        <div class="trait-detail">
+                            <div class="trait-detail-label">Category</div>
+                            <div class="trait-detail-value">${asset.category}</div>
+                        </div>
+                        <div class="trait-detail">
+                            <div class="trait-detail-label">Supply</div>
+                            <div class="trait-detail-value">${supplyText}</div>
+                        </div>
+                        <div class="trait-detail">
+                            <div class="trait-detail-label">Temporary</div>
+                            <div class="trait-detail-value">${asset.isTemporary ? 'Yes' : 'No'}</div>
+                        </div>
+                        ${asset.ipfsPath ? `
+                        <div class="trait-detail">
+                            <div class="trait-detail-label">IPFS URI</div>
+                            <div class="trait-detail-value">${asset.ipfsPath}</div>
+                        </div>
+                        ` : ''}
+                        ${asset.metadata ? `
+                        <div class="trait-detail">
+                            <div class="trait-detail-label">Metadata</div>
+                            <div class="trait-detail-value">${asset.metadata}</div>
+                        </div>
+                        ` : ''}
+                    </div>
+                    
+                    <div class="trait-actions">
+                        <button class="btn btn-edit" onclick="openEditModal(${asset.id})">
+                            Edit URI
+                        </button>
+                        <button class="btn btn-copy" onclick="copyAssetInfo(${asset.id})">
+                            Copy Info
+                        </button>
+                        <button class="btn btn-view" onclick="viewAssetDetails(${asset.id})">
+                            View Details
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function applyAssetFilters(assets) {
+            const categoryFilter = document.getElementById('filter-category').value.toLowerCase();
+            const nameFilter = document.getElementById('filter-name').value.toLowerCase();
+            const typeFilter = document.getElementById('filter-type').value;
+            
+            return assets.filter(asset => {
+                if (categoryFilter && !asset.category.toLowerCase().includes(categoryFilter)) {
+                    return false;
+                }
+                if (nameFilter && !asset.name.toLowerCase().includes(nameFilter)) {
+                    return false;
+                }
+                if (typeFilter && asset.assetTypeString !== typeFilter) {
+                    return false;
+                }
+                return true;
+            });
+        }
+
+        async function openEditModal(assetId) {
+            try {
+                showStatus('Loading asset details...', 'info');
+                
+                const assetData = await getAssetFullInfo(assetId);
+                if (!assetData) {
+                    showStatus('Failed to load asset details', 'error');
+                    return;
+                }
+                
+                currentEditAsset = assetData;
+                
+                // Populate modal
+                document.getElementById('edit-id').value = assetData.id;
+                document.getElementById('edit-name').value = assetData.name;
+                document.getElementById('edit-category').value = assetData.category;
+                document.getElementById('edit-uri').value = assetData.ipfsPath || '';
+                
+                // Show modal
+                document.getElementById('edit-modal').style.display = 'block';
+                
+                hideStatus();
+                
+            } catch (error) {
+                console.error('Error opening edit modal:', error);
+                showStatus('Error loading asset details: ' + error.message, 'error');
+            }
+        }
+
+        function closeEditModal() {
+            document.getElementById('edit-modal').style.display = 'none';
+            currentEditAsset = null;
+        }
+
+        async function saveAssetChanges() {
+            if (!currentEditAsset) {
+                showStatus('No asset selected for editing', 'error');
+                return;
+            }
+
+            const newUri = document.getElementById('edit-uri').value.trim();
+            
+            if (!newUri) {
+                showStatus('Please enter a valid IPFS URI', 'error');
+                return;
+            }
+
+            try {
+                showStatus('Updating asset URI...', 'info');
+                
+                // Try to update via TraitsCore first
+                let tx;
+                try {
+                    tx = await traitsCore.setAssetURI(currentEditAsset.id, newUri);
+                } catch (error) {
+                    // If TraitsCore fails, try Extensions
+                    tx = await traitsExtensions.setAssetURI(currentEditAsset.id, newUri);
+                }
+                
+                showStatus(`Updating... <a href="https://routescan.io/tx/${tx.hash}" target="_blank" class="tx-link">View TX</a>`, 'info');
+                
+                await tx.wait();
+                
+                showStatus(`URI updated successfully for asset #${currentEditAsset.id}!`, 'success');
+                
+                closeEditModal();
+                
+                // Refresh the current search results
+                searchTraits();
+                
+            } catch (error) {
+                console.error('Error updating asset URI:', error);
+                showStatus('Error updating URI: ' + error.message, 'error');
+            }
+        }
+
+        async function copyAssetInfo(assetId) {
+            try {
+                const assetData = await getAssetFullInfo(assetId);
+                if (assetData) {
+                    const infoText = JSON.stringify(assetData, null, 2);
+                    await navigator.clipboard.writeText(infoText);
+                    showStatus('Asset info copied to clipboard!', 'success');
+                }
+            } catch (error) {
+                console.error('Error copying asset info:', error);
+                showStatus('Error copying asset info: ' + error.message, 'error');
+            }
+        }
+
+        async function viewAssetDetails(assetId) {
+            try {
+                showStatus('Loading detailed asset information...', 'info');
+                
+                const assetData = await getAssetFullInfo(assetId);
+                if (!assetData) {
+                    showStatus('Failed to load asset details', 'error');
+                    return;
+                }
+                
+                // Create detailed view modal
+                const detailsModal = document.createElement('div');
+                detailsModal.className = 'modal';
+                detailsModal.style.display = 'block';
+                detailsModal.innerHTML = `
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3 class="modal-title">Asset #${assetData.id} Details</h3>
+                            <button class="close-btn" onclick="this.closest('.modal').remove()">&times;</button>
+                        </div>
+                        <div style="max-height: 60vh; overflow-y: auto;">
+                            <div class="trait-details" style="grid-template-columns: 1fr;">
+                                <div class="trait-detail">
+                                    <div class="trait-detail-label">Asset ID</div>
+                                    <div class="trait-detail-value">${assetData.id}</div>
+                                </div>
+                                <div class="trait-detail">
+                                    <div class="trait-detail-label">Name</div>
+                                    <div class="trait-detail-value">${assetData.name}</div>
+                                </div>
+                                <div class="trait-detail">
+                                    <div class="trait-detail-label">Category</div>
+                                    <div class="trait-detail-value">${assetData.category}</div>
+                                </div>
+                                <div class="trait-detail">
+                                    <div class="trait-detail-label">Asset Type</div>
+                                    <div class="trait-detail-value">${assetData.assetTypeString}</div>
+                                </div>
+                                <div class="trait-detail">
+                                    <div class="trait-detail-label">Total Minted</div>
+                                    <div class="trait-detail-value">${assetData.totalMinted}</div>
+                                </div>
+                                <div class="trait-detail">
+                                    <div class="trait-detail-label">Max Supply</div>
+                                    <div class="trait-detail-value">${assetData.maxSupply === '0' ? 'Unlimited' : assetData.maxSupply}</div>
+                                </div>
+                                <div class="trait-detail">
+                                    <div class="trait-detail-label">Is Temporary</div>
+                                    <div class="trait-detail-value">${assetData.isTemporary ? 'Yes' : 'No'}</div>
+                                </div>
+                                ${assetData.ipfsPath ? `
+                                <div class="trait-detail">
+                                    <div class="trait-detail-label">IPFS URI</div>
+                                    <div class="trait-detail-value" style="word-break: break-all;">${assetData.ipfsPath}</div>
+                                </div>
+                                ` : ''}
+                                ${assetData.metadata ? `
+                                <div class="trait-detail">
+                                    <div class="trait-detail-label">Metadata</div>
+                                    <div class="trait-detail-value" style="word-break: break-all;">${assetData.metadata}</div>
+                                </div>
+                                ` : ''}
+                            </div>
+                            <div style="margin-top: 20px;">
+                                <h4 style="color: #00ff88; margin-bottom: 10px;">JSON Data</h4>
+                                <pre style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; font-size: 12px; overflow-x: auto; color: #fff;">${JSON.stringify(assetData, null, 2)}</pre>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                document.body.appendChild(detailsModal);
+                
+                hideStatus();
+                
+            } catch (error) {
+                console.error('Error viewing asset details:', error);
+                showStatus('Error loading asset details: ' + error.message, 'error');
+            }
+        }
+
+        function showStatus(message, type = 'info') {
+            const status = document.getElementById('status');
+            status.className = `status ${type}`;
+            status.innerHTML = message;
+            status.style.display = 'block';
+            
+            // Auto-hide after 5 seconds for success messages
+            if (type === 'success') {
+                setTimeout(() => {
+                    hideStatus();
+                }, 5000);
+            }
+        }
+
+        function hideStatus() {
+            document.getElementById('status').style.display = 'none';
+        }
+
+        // Auto-connect if already connected
+        window.addEventListener('load', function() {
+            if (typeof ethers === 'undefined') {
+                console.error('ethers.js not loaded');
+                showStatus('Error: ethers.js not loaded. Please refresh the page.', 'error');
+                return;
+            }
+            
+            if (window.ethereum && window.ethereum.selectedAddress) {
+                connectWallet();
+            }
+        });
+
+        // Listen for account changes
+        if (window.ethereum) {
+            window.ethereum.on('accountsChanged', function (accounts) {
+                if (accounts.length === 0) {
+                    // User disconnected
+                    document.getElementById('connect-section').style.display = 'block';
+                    document.getElementById('wallet-connected').style.display = 'none';
+                    userAddress = null;
+                } else {
+                    // Account changed
+                    connectWallet();
+                }
+            });
+
+            window.ethereum.on('chainChanged', function (chainId) {
+                // Reload page on chain change
+                window.location.reload();
+            });
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('edit-modal');
+            if (event.target === modal) {
+                closeEditModal();
+            }
+        }
+
+        // Handle enter key in search inputs
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInputs = ['search-from-id', 'search-to-id', 'filter-category', 'filter-name'];
+            searchInputs.forEach(id => {
+                const input = document.getElementById(id);
+                if (input) {
+                    input.addEventListener('keypress', function(event) {
+                        if (event.key === 'Enter') {
+                            searchTraits();
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

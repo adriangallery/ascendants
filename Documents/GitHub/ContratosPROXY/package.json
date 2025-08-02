@@ -1,0 +1,17 @@
+{
+  "name": "contratos-proxy",
+  "version": "1.0.0",
+  "description": "Sistema de contratos inteligentes con arquitectura modular basada en Proxy",
+  "main": "index.js",
+  "scripts": {
+    "test": "hardhat test",
+    "compile": "hardhat compile"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.9.0",
+    "hardhat": "^2.17.0"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^2.0.0"
+  }
+} 

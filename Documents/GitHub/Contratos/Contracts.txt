@@ -1,0 +1,50 @@
+ADRIANtoken:            0x7E99075Ce287F1cF8cBCAaa6A1C7894e404fD7Ea
+treasuryWallet:         0x6787A904e7FC3371bbb649aa6E7BC0997c098268
+SPLIT CA:               0x13B9AD2e018D81f0D39a1bE9751332ac6DAC801C
+
+AdrianLabCore:          0x6e369bf0e4e0c106192d606fb6d85836d684da75 sp     (setup)
+AdrianLabExtensions:    0xb6ec8c4dbe7f770388f11f78db687c19db8e7227      (setup)
+
+                        
+AdrianDuplicatorModule: 0x8c96fc382ca44009a5a83b004e7c30969144843b      (setup)      
+AdrianHistory:          0x4e0681b799a8656fb035071092b50c8986dfdd2e      (setup)
+AdrianInventoryModule:  0x26aec5e7545de6feb1ca52c684ee14cb468a85d6 V    (setup)
+AdrianLabAdmin:         0xc2a55216304f24ee3422edd74ef94831a697acf8 deprecated
+AdrianLabCrafting:      0xa900cf0892d99e15608d34e4f12b4d96750e814e V    (setup)
+AdrianLabView:          0x57ab23c634595233561441e3f625bfb6df6c13d4 V    (no need)
+AdrianLabView2:         0x8613eaae6ce6ca03c13f2701ef42f6543fd737ca      (no need)
+AdrianMintModule:             (DEPRECATED)
+AdrianSerumModule:      0xeab822eb1913cd54239c61f883d11cba8d1ef840 V
+
+--------
+
+RELEASE VERSION:
+
+AdrianTraitsCore:       0x90546848474fb3c9fda3fdad887969bb244e7e58                                                               
+AdrianTraitsExtensions: 0x0995c0da1ca071b792e852b6ec531b7cd7d1f8d6   sp       
+AdrianPackMinter:       0x673be1968a12470f93be374aab529a89d5d607d5                                                           
+AdrianSerumModule:  
+PatientZERO:            0x41bd1d621f9a8de8f175dd9814d9c27fabb9172f   
+AdrianMintModule (adrianzero) 0x39be2ea60f78c55559309ed61acaf5a9174e57b6  sp
+AdrianNameRegistry:     0xaeC5ED33c88c1943BB7452aC4B571ad0b4c4068C   sp
+---------
+ 
+v5 packtokenminter: 0x9e569ba579bc9fb9a2a826555e6a9c456a981d14
+
+V6:
+AdrianTraitsCore:                                                            
+AdrianTraitsExtensions:        
+AdrianPackMinter:                                                
+AdrianSerumModule:                         
+
+//DEPLOYED, all of them need config, includin AdrianLabCore            
+
+https://adrianlab.vercel.app/api/metadata/floppy/
+
+
+
+------
+
+market solo para pruebas: 0xE746999546E65c44543a443CC1e9b5fe168ede5d
+
+artist: 0x9abd072f02a1eafdeffbba6794a846f9283d9c86

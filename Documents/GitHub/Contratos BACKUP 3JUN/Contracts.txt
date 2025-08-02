@@ -1,0 +1,6 @@
+ADRIANtoken: 0x7E99075Ce287F1cF8cBCAaa6A1C7894e404fD7Ea
+treasuryWallet: 0x83Aa2CE87E4D037FaA3EbC9b2df64c2a88e222d0
+
+AdrianLabCore: 0xA4A9aCcf1c14D76f33aF285d30d270306d4bC604
+AdrianLabExtensions: 0xda5345f076a3e6a38cb9b57c3ddd3c77da93a72e
+AdrianTraitsCore: 0xcfce13cd51283b5ef3ca72a1f7bdc942ba0128fe

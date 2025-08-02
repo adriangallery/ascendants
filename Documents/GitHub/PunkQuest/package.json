@@ -1,0 +1,13 @@
+{
+  "name": "punkquest",
+  "version": "1.0.0",
+  "description": "dApp PunkQuest para staking de NFTs",
+  "main": "index.js",
+  "scripts": {
+    "start": "http-server -p 3000",
+    "dev": "http-server -p 3000 --cors"
+  },
+  "dependencies": {
+    "http-server": "^14.1.1"
+  }
+} 

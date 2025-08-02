@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trait Admin</title>
+    <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js" type="application/javascript"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .search-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .search-inputs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .search-inputs input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        .quick-ranges {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .filters {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            background: #2196f3;
+            color: white;
+        }
+        
+        button:hover {
+            background: #1976d2;
+        }
+        
+        .trait-item {
+            background: white;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .trait-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        
+        .trait-type-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .trait-type-badge.trait { background: #e3f2fd; color: #1976d2; }
+        .trait-type-badge.serum { background: #f3e5f5; color: #7b1fa2; }
+        .trait-type-badge.pack { background: #e8f5e9; color: #388e3c; }
+        
+        .trait-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+        }
+        
+        .trait-detail {
+            margin-bottom: 8px;
+        }
+        
+        .trait-detail-label {
+            font-weight: bold;
+            color: #666;
+            font-size: 12px;
+        }
+        
+        .trait-detail-value {
+            word-break: break-all;
+        }
+        
+        .trait-actions {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn-edit, .btn-secondary {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .btn-edit {
+            background: #2196f3;
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: #f5f5f5;
+            color: #333;
+        }
+        
+        .search-summary {
+            margin-bottom: 20px;
+            padding: 10px;
+            background: #f5f5f5;
+            border-radius: 4px;
+        }
+        
+        .no-results {
+            text-align: center;
+            padding: 30px;
+            background: #f5f5f5;
+            border-radius: 8px;
+        }
+        
+        .status-message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            border-radius: 4px;
+            color: white;
+            z-index: 1000;
+        }
+        
+        .status-message.success { background: #4caf50; }
+        .status-message.error { background: #f44336; }
+        .status-message.info { background: #2196f3; }
+        
+        #traits-loading {
+            text-align: center;
+            padding: 20px;
+            font-size: 18px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <h1>Trait Admin</h1>
+        
+        <div class="search-section">
+            <h2>Search Traits</h2>
+            <div class="search-inputs">
+                <input type="number" id="search-from-id" placeholder="From ID" min="1">
+                <input type="number" id="search-to-id" placeholder="To ID" min="1">
+                <button onclick="searchTraits()">Search</button>
+            </div>
+            
+            <div class="quick-ranges">
+                <button onclick="searchQuickRanges('traits')">Traits (1-99999)</button>
+                <button onclick="searchQuickRanges('packs')">Packs (100000-109999)</button>
+                <button onclick="searchQuickRanges('serums')">Serums (110000+)</button>
+            </div>
+            
+            <div class="filters">
+                <input type="text" id="filter-category" placeholder="Filter by category">
+                <input type="text" id="filter-name" placeholder="Filter by name">
+                <select id="filter-type">
+                    <option value="">All Types</option>
+                    <option value="TRAIT">Traits</option>
+                    <option value="PACK">Packs</option>
+                    <option value="SERUM">Serums</option>
+                </select>
+            </div>
+        </div>
+        
+        <div id="traits-loading" style="display: none;">
+            Loading...
+        </div>
+        
+        <div id="traits-results"></div>
+    </div>
+
+    <script>
+        // Variables globales
+        let provider;
+        let signer;
+        let traitsCore;
+        
+        // Direcciones de contratos
+        const TRAITS_CORE_ADDRESS = "0x0A0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
+        
+        // ABI del contrato
+        const TRAITS_CORE_ABI = [
+            "function getName(uint256) view returns (string)",
+            "function getCategory(uint256) view returns (string)",
+            "function getTraitInfo(uint256) view returns (string, bool)",
+            "function totalMintedPerAsset(uint256) view returns (uint256)",
+            "function assets(uint256) view returns (tuple(string name, string category, string ipfsPath, bool tempFlag, uint256 maxSupply, uint256 assetType, string metadata))",
+            "function setTraitURI(uint256, string) external"
+        ];
+
+        // Inicialización
+        async function init() {
+            try {
+                provider = new ethers.providers.Web3Provider(window.ethereum);
+                await provider.send("eth_requestAccounts", []);
+                signer = provider.getSigner();
+                
+                traitsCore = new ethers.Contract(TRAITS_CORE_ADDRESS, TRAITS_CORE_ABI, signer);
+                
+                showStatus('Connected to Ethereum network', 'success');
+            } catch (error) {
+                console.error('Error initializing:', error);
+                showStatus('Error connecting to Ethereum: ' + error.message, 'error');
+            }
+        }
+
+        // Función de utilidad para mostrar mensajes de estado
+        function showStatus(message, type = 'info') {
+            const statusEl = document.createElement('div');
+            statusEl.className = `status-message ${type}`;
+            statusEl.textContent = message;
+            document.body.appendChild(statusEl);
+            
+            setTimeout(() => {
+                statusEl.remove();
+            }, 5000);
+        }
+
+        // Función para copiar información del trait
+        async function copyTraitInfo(assetId) {
+            try {
+                const traitInfo = await getTraitFullInfo(assetId);
+                if (traitInfo) {
+                    const infoText = JSON.stringify(traitInfo, null, 2);
+                    await navigator.clipboard.writeText(infoText);
+                    showStatus('Trait info copied to clipboard', 'success');
+                }
+            } catch (error) {
+                console.error('Error copying trait info:', error);
+                showStatus('Error copying trait info: ' + error.message, 'error');
+            }
+        }
+
+        // Función para editar URI del trait
+        async function editTraitURI(assetId, currentName, currentURI) {
+            const newURI = prompt(`Enter new IPFS URI for ${currentName} (${currentURI}):`, currentURI);
+            if (newURI === null) return;
+            
+            try {
+                showStatus(`Updating URI for asset ${assetId}...`, 'info');
+                const tx = await traitsCore.setTraitURI(assetId, newURI);
+                await tx.wait();
+                showStatus(`URI updated successfully for asset ${assetId}`, 'success');
+                // Refresh the search results
+                searchTraits();
+            } catch (error) {
+                console.error('Error updating trait URI:', error);
+                showStatus('Error updating trait URI: ' + error.message, 'error');
+            }
+        }
+
+        // Función para buscar traits
+        async function searchTraits() {
+            const fromId = parseInt(document.getElementById('search-from-id').value) || 1;
+            const toId = parseInt(document.getElementById('search-to-id').value) || 100;
+            
+            if (fromId > toId) {
+                showStatus('From ID cannot be greater than To ID', 'error');
+                return;
+            }
+            
+            if (toId - fromId > 500) {
+                showStatus('Search range too large. Please limit to 500 IDs at a time.', 'error');
+                return;
+            }
+            
+            const loadingEl = document.getElementById('traits-loading');
+            const resultsEl = document.getElementById('traits-results');
+            
+            loadingEl.style.display = 'block';
+            resultsEl.innerHTML = '';
+            
+            try {
+                showStatus(`Searching traits from ${fromId} to ${toId}...`, 'info');
+                
+                const foundTraits = [];
+                const batchSize = 50; // Process in batches to avoid rate limiting
+                
+                for (let start = fromId; start <= toId; start += batchSize) {
+                    const end = Math.min(start + batchSize - 1, toId);
+                    const batch = await searchTraitsBatch(start, end);
+                    foundTraits.push(...batch);
+                    
+                    // Small delay between batches to avoid rate limiting
+                    if (end < toId) {
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                    }
+                }
+                
+                loadingEl.style.display = 'none';
+                displayTraitsResults(foundTraits, fromId, toId);
+                
+                if (foundTraits.length > 0) {
+                    showStatus(`Found ${foundTraits.length} traits/assets`, 'success');
+                } else {
+                    showStatus(`No traits found in range ${fromId}-${toId}`, 'info');
+                }
+                
+            } catch (error) {
+                loadingEl.style.display = 'none';
+                console.error('Error searching traits:', error);
+                showStatus('Error searching traits: ' + error.message, 'error');
+            }
+        }
+
+        // Función para buscar traits en lotes
+        async function searchTraitsBatch(fromId, toId) {
+            const foundTraits = [];
+            
+            for (let id = fromId; id <= toId; id++) {
+                try {
+                    // Try to get the name first (fastest check if asset exists)
+                    const name = await traitsCore.getName(id);
+                    
+                    if (name && name.trim() !== '') {
+                        // Asset exists, get full info
+                        const traitData = await getTraitFullInfo(id);
+                        if (traitData) {
+                            foundTraits.push(traitData);
+                        }
+                    }
+                } catch (error) {
+                    // Asset doesn't exist or error reading it, skip
+                    continue;
+                }
+            }
+            
+            return foundTraits;
+        }
+
+        // Función para obtener información completa del trait
+        async function getTraitFullInfo(assetId) {
+            try {
+                // Get basic info
+                const name = await traitsCore.getName(assetId);
+                const category = await traitsCore.getCategory(assetId);
+                const [traitCategory, isTemp] = await traitsCore.getTraitInfo(assetId);
+                const totalMinted = await traitsCore.totalMintedPerAsset(assetId);
+                
+                // Get full asset data
+                let assetData;
+                try {
+                    assetData = await traitsCore.assets(assetId);
+                } catch (e) {
+                    // Fallback if assets() fails
+                    assetData = {
+                        name: name,
+                        category: category,
+                        ipfsPath: '',
+                        tempFlag: isTemp,
+                        maxSupply: 0,
+                        assetType: 0,
+                        metadata: ''
+                    };
+                }
+                
+                // Determine asset type based on ID range
+                let assetType = 'TRAIT';
+                let typeBadgeClass = 'trait';
+                
+                if (assetId >= 110000) {
+                    assetType = 'SERUM';
+                    typeBadgeClass = 'serum';
+                } else if (assetId >= 100000) {
+                    assetType = 'PACK';
+                    typeBadgeClass = 'pack';
+                }
+                
+                return {
+                    id: assetId,
+                    name: name || 'Unnamed',
+                    category: category || 'Uncategorized',
+                    isTemporary: isTemp,
+                    totalMinted: totalMinted.toString(),
+                    maxSupply: assetData.maxSupply ? assetData.maxSupply.toString() : '0',
+                    ipfsPath: assetData.ipfsPath || '',
+                    metadata: assetData.metadata || '',
+                    assetType: assetType,
+                    typeBadgeClass: typeBadgeClass,
+                    assetTypeValue: assetData.assetType || 0
+                };
+                
+            } catch (error) {
+                console.error(`Error getting info for asset ${assetId}:`, error);
+                return null;
+            }
+        }
+
+        // Función para mostrar resultados de traits
+        function displayTraitsResults(traits, fromId, toId) {
+            const resultsEl = document.getElementById('traits-results');
+            
+            if (traits.length === 0) {
+                resultsEl.innerHTML = `
+                    <div class="no-results">
+                        <h3>No traits found</h3>
+                        <p>No assets found in range ${fromId}-${toId}</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Apply filters
+            const filteredTraits = applyTraitFilters(traits);
+            
+            let html = `
+                <div class="search-summary">
+                    <strong>Search Results:</strong> Found ${traits.length} assets in range ${fromId}-${toId}
+                    ${filteredTraits.length !== traits.length ? ` (${filteredTraits.length} shown after filters)` : ''}
+                </div>
+            `;
+            
+            if (filteredTraits.length === 0) {
+                html += `
+                    <div class="no-results">
+                        <h3>No results after filtering</h3>
+                        <p>Try adjusting your filters</p>
+                    </div>
+                `;
+            } else {
+                filteredTraits.forEach(trait => {
+                    html += `
+                        <div class="trait-item">
+                            <div class="trait-header">
+                                <span class="trait-id">#${trait.id}</span>
+                                <span class="trait-type-badge ${trait.typeBadgeClass}">${trait.assetType}</span>
+                            </div>
+                            
+                            <div class="trait-details">
+                                <div class="trait-detail">
+                                    <div class="trait-detail-label">Name</div>
+                                    <div class="trait-detail-value">${trait.name}</div>
+                                </div>
+                                <div class="trait-detail">
+                                    <div class="trait-detail-label">Category</div>
+                                    <div class="trait-detail-value">${trait.category}</div>
+                                </div>
+                                <div class="trait-detail">
+                                    <div class="trait-detail-label">Supply</div>
+                                    <div class="trait-detail-value">${trait.totalMinted}${trait.maxSupply !== '0' ? ` / ${trait.maxSupply}` : ' (unlimited)'}</div>
+                                </div>
+                                <div class="trait-detail">
+                                    <div class="trait-detail-label">Temporary</div>
+                                    <div class="trait-detail-value">${trait.isTemporary ? 'Yes' : 'No'}</div>
+                                </div>
+                                ${trait.ipfsPath ? `
+                                <div class="trait-detail">
+                                    <div class="trait-detail-label">IPFS Path</div>
+                                    <div class="trait-detail-value">${trait.ipfsPath}</div>
+                                </div>
+                                ` : ''}
+                                ${trait.metadata ? `
+                                <div class="trait-detail">
+                                    <div class="trait-detail-label">Metadata</div>
+                                    <div class="trait-detail-value">${trait.metadata}</div>
+                                </div>
+                                ` : ''}
+                            </div>
+                            
+                            <div class="trait-actions">
+                                <button class="btn-edit" onclick="editTraitURI(${trait.id}, '${trait.name.replace(/'/g, "\\'")}', '${trait.ipfsPath}')">
+                                    Edit URI
+                                </button>
+                                <button class="btn-secondary" onclick="copyTraitInfo(${trait.id})">
+                                    Copy Info
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            
+            resultsEl.innerHTML = html;
+        }
+
+        // Función para aplicar filtros
+        function applyTraitFilters(traits) {
+            const categoryFilter = document.getElementById('filter-category').value.toLowerCase();
+            const nameFilter = document.getElementById('filter-name').value.toLowerCase();
+            const typeFilter = document.getElementById('filter-type').value;
+            
+            return traits.filter(trait => {
+                if (categoryFilter && !trait.category.toLowerCase().includes(categoryFilter)) {
+                    return false;
+                }
+                if (nameFilter && !trait.name.toLowerCase().includes(nameFilter)) {
+                    return false;
+                }
+                if (typeFilter && trait.assetType !== typeFilter) {
+                    return false;
+                }
+                return true;
+            });
+        }
+
+        // Función para búsquedas rápidas
+        function searchQuickRanges(type) {
+            const fromInput = document.getElementById('search-from-id');
+            const toInput = document.getElementById('search-to-id');
+            
+            switch (type) {
+                case 'traits':
+                    fromInput.value = '1';
+                    toInput.value = '99999';
+                    break;
+                case 'packs':
+                    fromInput.value = '100000';
+                    toInput.value = '109999';
+                    break;
+                case 'serums':
+                    fromInput.value = '110000';
+                    toInput.value = '120000';
+                    break;
+            }
+            
+            searchTraits();
+        }
+
+        // Inicializar al cargar la página
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html> 
