@@ -15,23 +15,47 @@ import { PriceChangeMonitor } from './services/PriceChangeMonitor';
 (function immediateBotCheck() {
   try {
     const workingDir = process.cwd();
-    let packageJson: any;
+    const scriptPath = process.argv[1] || __filename;
     
-    // Intentar leer package.json desde el directorio actual
-    const packagePath = path.join(workingDir, 'package.json');
-    if (fs.existsSync(packagePath)) {
+    console.log('========================================');
+    console.log('🔍 VERIFICACIÓN DE BOT');
+    console.log('========================================');
+    console.log(`Directorio de trabajo: ${workingDir}`);
+    console.log(`Script ejecutado: ${scriptPath}`);
+    console.log('========================================\n');
+    
+    // Verificar si estamos en el directorio correcto
+    const adrianBotDir = path.join(workingDir, 'adrian-arbitrage-bot');
+    const isInAdrianDir = fs.existsSync(path.join(workingDir, 'package.json')) && 
+                          fs.existsSync(path.join(workingDir, 'src', 'bot.ts'));
+    const isInRootWithAdrian = fs.existsSync(adrianBotDir) && 
+                               fs.existsSync(path.join(adrianBotDir, 'package.json'));
+    
+    let packageJson: any;
+    let packagePath: string;
+    
+    // Prioridad 1: Si estamos en el directorio adrian-arbitrage-bot
+    if (isInAdrianDir) {
+      packagePath = path.join(workingDir, 'package.json');
       packageJson = require(packagePath);
-    } else {
-      // Si no existe, intentar desde el directorio padre (cuando se ejecuta desde la raíz del repo)
-      const parentPackagePath = path.join(workingDir, 'adrian-arbitrage-bot', 'package.json');
-      if (fs.existsSync(parentPackagePath)) {
-        packageJson = require(parentPackagePath);
+    }
+    // Prioridad 2: Si estamos en la raíz y existe adrian-arbitrage-bot
+    else if (isInRootWithAdrian) {
+      packagePath = path.join(adrianBotDir, 'package.json');
+      packageJson = require(packagePath);
+    }
+    // Prioridad 3: Intentar desde el directorio actual
+    else {
+      packagePath = path.join(workingDir, 'package.json');
+      if (fs.existsSync(packagePath)) {
+        packageJson = require(packagePath);
       } else {
         // Último intento: buscar relativamente
         try {
-          packageJson = require('../package.json');
+          packagePath = path.resolve(__dirname, '../package.json');
+          packageJson = require(packagePath);
         } catch {
-          // Si falla, continuar y dejar que la validación principal lo detecte
+          console.error('❌ No se pudo encontrar package.json');
           return;
         }
       }
@@ -39,13 +63,19 @@ import { PriceChangeMonitor } from './services/PriceChangeMonitor';
     
     const packageName = packageJson?.name;
     
+    console.log(`Package encontrado: ${packagePath}`);
+    console.log(`Package name: ${packageName}`);
+    console.log('========================================\n');
+    
     // Si detectamos el NFT bot, fallar INMEDIATAMENTE
     if (packageName === 'nft-arbitrage-bot' || (packageName && packageName.includes('nft'))) {
       console.error('\n========================================');
       console.error('❌ ERROR CRÍTICO: DETECTADO NFT BOT');
       console.error('========================================');
       console.error(`Package name: ${packageName}`);
-      console.error(`Directorio: ${workingDir}`);
+      console.error(`Package path: ${packagePath}`);
+      console.error(`Directorio de trabajo: ${workingDir}`);
+      console.error(`Script ejecutado: ${scriptPath}`);
       console.error('========================================');
       console.error('Railway está ejecutando el código del NFT bot.');
       console.error('\nSOLUCIÓN EN RAILWAY:');
@@ -58,8 +88,23 @@ import { PriceChangeMonitor } from './services/PriceChangeMonitor';
       console.error('========================================\n');
       process.exit(1);
     }
-  } catch (error) {
-    // Si hay error en la verificación, continuar (la validación principal lo detectará)
+    
+    // Verificar que el package name sea correcto
+    if (packageName !== 'adrian-arbitrage-bot') {
+      console.error('\n========================================');
+      console.error('❌ ERROR: Package name incorrecto');
+      console.error('========================================');
+      console.error(`Esperado: adrian-arbitrage-bot`);
+      console.error(`Encontrado: ${packageName}`);
+      console.error(`Package path: ${packagePath}`);
+      console.error('========================================\n');
+      process.exit(1);
+    }
+    
+    console.log('✅ Verificación de bot correcta\n');
+  } catch (error: any) {
+    console.error('❌ Error en verificación de bot:', error.message);
+    // Continuar para que la validación principal lo detecte
   }
 })();
 
