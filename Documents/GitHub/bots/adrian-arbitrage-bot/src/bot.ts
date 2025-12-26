@@ -1,6 +1,7 @@
 // ========================================
 // ADRIAN ARBITRAGE BOT - INICIO DEL ARCHIVO
 // ========================================
+// FORCE REDEPLOY 2025-12-26 17:15 - Railway debe usar Root Directory: adrian-arbitrage-bot
 console.log('🚀 ADRIAN ARBITRAGE BOT - CARGANDO ARCHIVO bot.ts');
 console.log(`📁 __dirname: ${__dirname}`);
 console.log(`📁 process.cwd(): ${process.cwd()}`);
