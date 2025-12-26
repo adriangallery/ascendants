@@ -1,0 +1,52 @@
+{
+  "name": "adrian-arbitrage-bot",
+  "version": "1.0.0",
+  "description": "Bot de arbitraje para $ADRIAN entre múltiples liquidity pools",
+  "main": "dist/bot.js",
+  "scripts": {
+    "build": "tsc",
+    "postinstall": "npm run build",
+    "start": "ts-node src/bot.ts",
+    "start:prod": "node start.js",
+    "dev": "ts-node src/bot.ts",
+    "test:discover": "ts-node src/tests/test-pool-discovery.ts",
+    "test:discover-all": "ts-node src/tests/test-discover-all-pools.ts",
+    "test:diagnose": "ts-node src/tests/test-diagnose-v4-pool.ts",
+    "test:analyze": "ts-node src/tests/test-analyze-pools.ts",
+    "test:detect": "ts-node src/test-mode.ts",
+    "test:execute": "ts-node src/tests/test-execute-opportunity.ts",
+    "test:small-trades": "ts-node src/tests/test-small-trades.ts",
+    "test:simple-swaps": "ts-node src/tests/test-simple-swaps.ts",
+    "test:transaction-analysis": "ts-node src/tests/test-transaction-analysis.ts",
+    "test:trade-size": "ts-node src/tests/test-trade-size-calculator.ts",
+    "test:emergency-status": "ts-node src/tests/test-emergency-mode.ts status",
+    "test:emergency-reset": "ts-node src/tests/test-emergency-mode.ts reset",
+    "test:emergency-simulate": "ts-node src/tests/test-emergency-mode.ts simulate",
+    "test:trade-size-integration": "ts-node src/tests/test-trade-size-integration.ts",
+    "test:opportunity-detection": "ts-node src/tests/test-opportunity-detection.ts",
+    "test:force-trade-validation": "ts-node src/tests/test-force-trade-validation.ts",
+    "test:analyze-trade-details": "ts-node src/tests/test-analyze-trade-details.ts",
+    "test:list": "ts-node -e \"const {OpportunityCatalog} = require('./src/services/OpportunityCatalog'); const cat = new OpportunityCatalog(); console.log(JSON.stringify(cat.listOpportunities(), null, 2));\""
+  },
+  "keywords": [
+    "arbitrage",
+    "defi",
+    "uniswap",
+    "ethereum",
+    "base"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.7.7",
+    "dotenv": "^16.4.5",
+    "ethers": "^6.13.0",
+    "winston": "^3.14.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.0"
+  }
+}
+

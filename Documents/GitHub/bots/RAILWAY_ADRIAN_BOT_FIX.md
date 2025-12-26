@@ -23,8 +23,9 @@ He actualizado el `railway.json` del `adrian-arbitrage-bot` para incluir comando
    - Si está vacío o diferente, cópialo y pégalo exactamente
 
 3. **Settings → Deploy → Start Command**:
-   - Debe ser: `cd adrian-arbitrage-bot && npm run start:prod`
+   - Debe ser: `cd adrian-arbitrage-bot && node start.js`
    - Si está vacío o diferente, cópialo y pégalo exactamente
+   - **NOTA**: El script `start.js` valida automáticamente que se esté ejecutando el bot correcto
 
 4. **Settings → Build → Watch Paths**:
    - Debe tener: `adrian-arbitrage-bot/**`
@@ -40,11 +41,17 @@ Después de hacer los cambios y redeployar, los logs deben mostrar:
 
 ### ✅ Logs CORRECTOS (Adrian bot):
 ```
-🚀 ADRIAN ARBITRAGE BOT - CARGANDO ARCHIVO bot.ts
-📁 __dirname: ...
-📁 process.cwd(): ...
 ========================================
-✅ ADRIAN ARBITRAGE BOT - IMPORTS COMPLETADOS
+🔍 VALIDACIÓN PRE-INICIO
+========================================
+📁 Directorio actual: ...
+📦 Package.json encontrado: .../adrian-arbitrage-bot/package.json
+📛 Package name: adrian-arbitrage-bot
+✅ Validación pasada
+🚀 Ejecutando: .../dist/bot.js
+========================================
+
+🚀 ADRIAN ARBITRAGE BOT - CARGANDO ARCHIVO bot.ts
 ========================================
 🔍 VERIFICACIÓN DE BOT
 ========================================
@@ -74,6 +81,8 @@ Si después de configurar los comandos manualmente en Railway los logs siguen mo
 
 3. **Verifica el Build Command y Start Command manualmente**:
    - Asegúrate de que los comandos en Railway Settings coincidan exactamente con los del `railway.json`
+   - Build Command: `cd adrian-arbitrage-bot && npm install && npm run build`
+   - Start Command: `cd adrian-arbitrage-bot && node start.js`
    - Los comandos deben incluir `cd adrian-arbitrage-bot &&` al inicio
 
 4. **Verifica que el Root Directory esté vacío**:
