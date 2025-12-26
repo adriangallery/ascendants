@@ -9,7 +9,7 @@
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10
   },
-  "_comment": "ADRIAN ARBITRAGE BOT - Updated 2025-12-26 17:30 - Root Directory configurado como 'adrian-arbitrage-bot', por lo que NO se necesitan comandos 'cd'",
+  "_comment": "ADRIAN ARBITRAGE BOT - Updated 2025-12-26 17:35 - Root Directory = 'adrian-arbitrage-bot', railway.json de raíz eliminado para evitar conflictos",
   "_service": "adrian-arbitrage-bot",
   "_botType": "adrian-arbitrage",
   "_important": "Este railway.json está dentro de adrian-arbitrage-bot/. Cuando Root Directory = 'adrian-arbitrage-bot', Railway ya ejecuta desde este directorio, por lo que NO se necesitan comandos 'cd'"
