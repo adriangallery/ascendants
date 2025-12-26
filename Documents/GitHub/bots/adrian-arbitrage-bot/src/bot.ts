@@ -11,6 +11,58 @@ import { ArbitrageService } from './services/ArbitrageService';
 import { EmergencyModeService } from './services/EmergencyModeService';
 import { PriceChangeMonitor } from './services/PriceChangeMonitor';
 
+// VERIFICACIÓN INMEDIATA: Detectar si estamos ejecutando el bot incorrecto ANTES de cualquier otra cosa
+(function immediateBotCheck() {
+  try {
+    const workingDir = process.cwd();
+    let packageJson: any;
+    
+    // Intentar leer package.json desde el directorio actual
+    const packagePath = path.join(workingDir, 'package.json');
+    if (fs.existsSync(packagePath)) {
+      packageJson = require(packagePath);
+    } else {
+      // Si no existe, intentar desde el directorio padre (cuando se ejecuta desde la raíz del repo)
+      const parentPackagePath = path.join(workingDir, 'adrian-arbitrage-bot', 'package.json');
+      if (fs.existsSync(parentPackagePath)) {
+        packageJson = require(parentPackagePath);
+      } else {
+        // Último intento: buscar relativamente
+        try {
+          packageJson = require('../package.json');
+        } catch {
+          // Si falla, continuar y dejar que la validación principal lo detecte
+          return;
+        }
+      }
+    }
+    
+    const packageName = packageJson?.name;
+    
+    // Si detectamos el NFT bot, fallar INMEDIATAMENTE
+    if (packageName === 'nft-arbitrage-bot' || (packageName && packageName.includes('nft'))) {
+      console.error('\n========================================');
+      console.error('❌ ERROR CRÍTICO: DETECTADO NFT BOT');
+      console.error('========================================');
+      console.error(`Package name: ${packageName}`);
+      console.error(`Directorio: ${workingDir}`);
+      console.error('========================================');
+      console.error('Railway está ejecutando el código del NFT bot.');
+      console.error('\nSOLUCIÓN EN RAILWAY:');
+      console.error('1. Settings → Build → Build Command:');
+      console.error('   cd adrian-arbitrage-bot && npm install && npm run build');
+      console.error('2. Settings → Deploy → Start Command:');
+      console.error('   cd adrian-arbitrage-bot && npm run start:prod');
+      console.error('3. Settings → Source → Root Directory: VACÍO');
+      console.error('4. Settings → Build → Watch Paths: adrian-arbitrage-bot/**');
+      console.error('========================================\n');
+      process.exit(1);
+    }
+  } catch (error) {
+    // Si hay error en la verificación, continuar (la validación principal lo detectará)
+  }
+})();
+
 async function executeArbitrageCycle(
   discoveryService: PoolDiscoveryService,
   priceComparisonService: PriceComparisonService,
