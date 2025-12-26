@@ -1,4 +1,6 @@
 import { ethers } from 'ethers';
+import * as fs from 'fs';
+import * as path from 'path';
 import { config, validateConfig } from './config/env';
 import { logger } from './utils/logger';
 import { BotStatus } from './utils/status';
@@ -222,15 +224,88 @@ async function executeArbitrageCycle(
 
 async function main() {
   try {
+    // VERIFICACIÓN CRÍTICA: Asegurar que estamos ejecutando el bot correcto
+    const workingDir = process.cwd();
+    const expectedDirName = 'adrian-arbitrage-bot';
+    
+    // Verificar que estamos en el directorio correcto
+    const isInCorrectDir = workingDir.includes(expectedDirName) || 
+                          fs.existsSync(path.join(workingDir, 'package.json')) && 
+                          fs.existsSync(path.join(workingDir, 'src', 'bot.ts'));
+    
+    let packageJson: any;
+    try {
+      // Intentar leer package.json desde el directorio actual o relativo
+      const packagePath = path.join(workingDir, 'package.json');
+      if (fs.existsSync(packagePath)) {
+        packageJson = require(packagePath);
+      } else {
+        packageJson = require('../package.json');
+      }
+    } catch (error) {
+      console.error('❌ ERROR CRÍTICO: No se pudo leer package.json');
+      console.error('Esto indica que Railway está ejecutando el código desde el directorio incorrecto.');
+      console.error('Directorio de trabajo:', workingDir);
+      console.error('Verifica que el Start Command en Railway sea: cd adrian-arbitrage-bot && npm run start:prod');
+      process.exit(1);
+    }
+    
+    const packageName = packageJson.name;
+    const expectedName = 'adrian-arbitrage-bot';
+    
+    // Verificar que NO estamos ejecutando el NFT bot
+    if (packageName === 'nft-arbitrage-bot' || packageName?.includes('nft')) {
+      console.error('========================================');
+      console.error('❌ ERROR CRÍTICO: DETECTADO NFT BOT EN LUGAR DE ADRIAN BOT');
+      console.error('========================================');
+      console.error(`Package name detectado: ${packageName}`);
+      console.error('Directorio de trabajo:', workingDir);
+      console.error('========================================');
+      console.error('Railway está ejecutando el código del NFT bot en lugar del Adrian bot.');
+      console.error('SOLUCIÓN: Verifica la configuración del servicio "adrian-arbitrage-bot" en Railway:');
+      console.error('1. Ve a Settings → Source → Root Directory: DEBE ESTAR VACÍO');
+      console.error('2. Ve a Settings → Build → Build Command: cd adrian-arbitrage-bot && npm install && npm run build');
+      console.error('3. Ve a Settings → Deploy → Start Command: cd adrian-arbitrage-bot && npm run start:prod');
+      console.error('4. Asegúrate de que el servicio se llama "adrian-arbitrage-bot" y NO "nft-arbitrage-bot"');
+      console.error('========================================');
+      process.exit(1);
+    }
+    
+    if (packageName !== expectedName) {
+      console.error('========================================');
+      console.error('❌ ERROR CRÍTICO: BOT INCORRECTO DETECTADO');
+      console.error('========================================');
+      console.error(`Package name esperado: ${expectedName}`);
+      console.error(`Package name detectado: ${packageName}`);
+      console.error('Directorio de trabajo:', workingDir);
+      console.error('========================================');
+      console.error('Railway está ejecutando el código del bot incorrecto.');
+      console.error('Verifica la configuración del servicio en Railway:');
+      console.error('1. Root Directory debe estar VACÍO');
+      console.error('2. Start Command debe ser: cd adrian-arbitrage-bot && npm run start:prod');
+      console.error('3. Build Command debe ser: cd adrian-arbitrage-bot && npm install && npm run build');
+      console.error('========================================');
+      process.exit(1);
+    }
+    
     // Identificación explícita del bot
     console.log('========================================');
     console.log('🚀 ADRIAN ARBITRAGE BOT - INICIANDO');
     console.log('========================================');
+    console.log('✓ Verificación de bot correcto: PASADA');
     console.log('Directorio de trabajo:', process.cwd());
-    console.log('Package name:', require('../package.json').name);
+    console.log('Package name:', packageName);
+    console.log('Archivo ejecutado:', __filename);
     console.log('========================================\n');
     
-    logger.info('=== ADRIAN ARBITRAGE BOT - INICIANDO ===');
+    logger.info('========================================');
+    logger.info('🚀 ADRIAN ARBITRAGE BOT - INICIANDO');
+    logger.info('========================================');
+    logger.info('✓ Verificación de bot correcto: PASADA', {
+      packageName,
+      workingDirectory: process.cwd(),
+      executedFile: __filename,
+    });
     
     // Validar configuración
     validateConfig();
