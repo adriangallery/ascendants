@@ -222,6 +222,14 @@ async function executeArbitrageCycle(
 
 async function main() {
   try {
+    // Identificación explícita del bot
+    console.log('========================================');
+    console.log('🚀 ADRIAN ARBITRAGE BOT - INICIANDO');
+    console.log('========================================');
+    console.log('Directorio de trabajo:', process.cwd());
+    console.log('Package name:', require('../package.json').name);
+    console.log('========================================\n');
+    
     logger.info('=== ADRIAN ARBITRAGE BOT - INICIANDO ===');
     
     // Validar configuración
