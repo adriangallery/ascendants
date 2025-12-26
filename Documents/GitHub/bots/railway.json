@@ -1,0 +1,17 @@
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "builder": "NIXPACKS",
+    "buildCommand": "cd adrian-arbitrage-bot && npm install && npm run build"
+  },
+  "deploy": {
+    "startCommand": "cd adrian-arbitrage-bot && node start.js",
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 10
+  },
+  "_comment": "RAILWAY.JSON EN RAÍZ - Para servicio adrian-arbitrage-bot - Updated 2025-12-26 - Usa comandos cd porque Root Directory está VACÍO",
+  "_service": "adrian-arbitrage-bot",
+  "_botType": "adrian-arbitrage",
+  "_important": "Este archivo es para el servicio adrian-arbitrage-bot. Si tienes múltiples servicios, configura 'Railway Config File' en Settings → Config-as-code para cada servicio."
+}
+
