@@ -225,6 +225,7 @@ async function executeArbitrageCycle(
 async function main() {
   try {
     // VERIFICACIÓN CRÍTICA: Asegurar que estamos ejecutando el bot correcto
+    // Esta validación previene que Railway ejecute el código del NFT bot por error
     const workingDir = process.cwd();
     const expectedDirName = 'adrian-arbitrage-bot';
     
