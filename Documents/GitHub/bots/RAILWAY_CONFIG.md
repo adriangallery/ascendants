@@ -18,52 +18,85 @@ Cada bot debe tener su propio servicio en Railway con la siguiente configuració
 ### 1. adrian-arbitrage-bot
 
 **Settings → Source:**
-- Root Directory: `adrian-arbitrage-bot` (o dejar vacío si usas Watch Paths)
+- Root Directory: `adrian-arbitrage-bot`
 
 **Settings → Build:**
-- Watch Paths: `adrian-arbitrage-bot/**`
-- Build Command: `cd adrian-arbitrage-bot && npm install && npm run build`
+- Build Command: (se toma del `railway.json`, no necesita configuración manual)
+- O manualmente: `npm install && npm run build`
 
 **Settings → Deploy:**
-- Start Command: `cd adrian-arbitrage-bot && npm run start:prod`
+- Start Command: (se toma del `railway.json`, no necesita configuración manual)
+- O manualmente: `npm run start:prod`
+
+**Nota:** Cuando usas "Root Directory", Railway ejecuta los comandos desde ese directorio, por lo que NO necesitas `cd` en los comandos.
 
 ### 2. nft-arbitrage-bot copyv2
 
 **Settings → Source:**
-- Root Directory: `nft-arbitrage-bot copyv2` (o dejar vacío si usas Watch Paths)
+- Root Directory: `nft-arbitrage-bot copyv2`
 
 **Settings → Build:**
-- Watch Paths: `nft-arbitrage-bot copyv2/**`
-- Build Command: `cd "nft-arbitrage-bot copyv2" && npm install && npm run build`
+- Build Command: (se toma del `railway.json`, no necesita configuración manual)
+- O manualmente: `npm install && npm run build`
 
 **Settings → Deploy:**
-- Start Command: `cd "nft-arbitrage-bot copyv2" && npm run start:prod`
+- Start Command: (se toma del `railway.json`, no necesita configuración manual)
+- O manualmente: `npm run start:prod`
 
-## Recomendación: Usar Watch Paths (sin Root Directory)
+**Nota:** Cuando usas "Root Directory", Railway ejecuta los comandos desde ese directorio, por lo que NO necesitas `cd` en los comandos.
+
+## Método Recomendado: Root Directory
 
 **Ventajas:**
-- Cada servicio solo se despliega cuando cambian archivos en su directorio
-- No necesitas configurar Root Directory
-- Más fácil de mantener
-- Menos propenso a errores
+- Cada servicio tiene su propio contexto de ejecución
+- El `railway.json` dentro de cada directorio se usa automáticamente
+- Más simple y directo
+- Menos propenso a errores de rutas
 
 **Configuración:**
-1. **NO configures Root Directory** (déjalo vacío o elimínalo)
+1. **Configura Root Directory** en Settings → Source para cada servicio
+2. El `railway.json` dentro de cada directorio se detecta automáticamente
+3. Los comandos en `railway.json` NO necesitan `cd` porque Railway ya está en el directorio correcto
+
+## Alternativa: Watch Paths (sin Root Directory)
+
+Si prefieres NO usar Root Directory:
+
+**Configuración:**
+1. **NO configures Root Directory** (déjalo vacío)
 2. **SÍ configura Watch Paths** en Build → Watch Paths:
    - Para adrian-arbitrage-bot: `adrian-arbitrage-bot/**`
    - Para nft-arbitrage-bot: `nft-arbitrage-bot copyv2/**`
+3. **Configura Build Command manualmente** en Settings → Build:
+   - `cd adrian-arbitrage-bot && npm install && npm run build`
+   - `cd "nft-arbitrage-bot copyv2" && npm install && npm run build`
+4. **Configura Start Command manualmente** en Settings → Deploy:
+   - `cd adrian-arbitrage-bot && npm run start:prod`
+   - `cd "nft-arbitrage-bot copyv2" && npm run start:prod`
 
 ## Añadir Nuevos Bots
 
 Para añadir un nuevo bot:
 
 1. Crea el directorio del bot en el repositorio
-2. Crea un `railway.json` en el directorio del bot (copia de uno existente y ajusta)
+2. Crea un `railway.json` en el directorio del bot con:
+```json
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "builder": "NIXPACKS",
+    "buildCommand": "npm install && npm run build"
+  },
+  "deploy": {
+    "startCommand": "npm run start:prod",
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 10
+  }
+}
+```
 3. Crea un nuevo servicio en Railway
-4. Configura Watch Paths: `[nombre-del-bot]/**`
-5. Configura Build Command: `cd [nombre-del-bot] && npm install && npm run build`
-6. Configura Start Command: `cd [nombre-del-bot] && npm run start:prod`
-7. Añade las variables de entorno necesarias
+4. Configura Root Directory: `[nombre-del-bot]`
+5. Añade las variables de entorno necesarias
 
 ## Variables de Entorno
 
