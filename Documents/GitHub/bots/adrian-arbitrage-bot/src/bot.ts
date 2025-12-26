@@ -17,6 +17,10 @@ import { PriceChangeMonitor } from './services/PriceChangeMonitor';
     const workingDir = process.cwd();
     const scriptPath = process.argv[1] || __filename;
     
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/7e4412d0-d04a-4fec-a842-10e1a74a267c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'bot.ts:17',message:'Bot check start',data:{workingDir,scriptPath,__dirname,argv:process.argv},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
+    
     console.log('========================================');
     console.log('🔍 VERIFICACIÓN DE BOT');
     console.log('========================================');
@@ -26,34 +30,48 @@ import { PriceChangeMonitor } from './services/PriceChangeMonitor';
     
     // Verificar si estamos en el directorio correcto
     const adrianBotDir = path.join(workingDir, 'adrian-arbitrage-bot');
-    const isInAdrianDir = fs.existsSync(path.join(workingDir, 'package.json')) && 
+    const rootPackagePath = path.join(workingDir, 'package.json');
+    const adrianPackagePath = path.join(adrianBotDir, 'package.json');
+    const relativePackagePath = path.resolve(__dirname, '../package.json');
+    
+    const isInAdrianDir = fs.existsSync(rootPackagePath) && 
                           fs.existsSync(path.join(workingDir, 'src', 'bot.ts'));
     const isInRootWithAdrian = fs.existsSync(adrianBotDir) && 
-                               fs.existsSync(path.join(adrianBotDir, 'package.json'));
+                               fs.existsSync(adrianPackagePath);
+    const rootHasPackage = fs.existsSync(rootPackagePath);
+    
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/7e4412d0-d04a-4fec-a842-10e1a74a267c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'bot.ts:28',message:'Directory check',data:{isInAdrianDir,isInRootWithAdrian,rootHasPackage,rootPackagePath,adrianPackagePath,relativePackagePath},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+    // #endregion
     
     let packageJson: any;
     let packagePath: string;
+    let detectionMethod = '';
     
     // Prioridad 1: Si estamos en el directorio adrian-arbitrage-bot
     if (isInAdrianDir) {
-      packagePath = path.join(workingDir, 'package.json');
+      packagePath = rootPackagePath;
       packageJson = require(packagePath);
+      detectionMethod = 'direct';
     }
     // Prioridad 2: Si estamos en la raíz y existe adrian-arbitrage-bot
     else if (isInRootWithAdrian) {
-      packagePath = path.join(adrianBotDir, 'package.json');
+      packagePath = adrianPackagePath;
       packageJson = require(packagePath);
+      detectionMethod = 'root-with-adrian';
     }
     // Prioridad 3: Intentar desde el directorio actual
     else {
-      packagePath = path.join(workingDir, 'package.json');
+      packagePath = rootPackagePath;
       if (fs.existsSync(packagePath)) {
         packageJson = require(packagePath);
+        detectionMethod = 'root-fallback';
       } else {
         // Último intento: buscar relativamente
         try {
-          packagePath = path.resolve(__dirname, '../package.json');
+          packagePath = relativePackagePath;
           packageJson = require(packagePath);
+          detectionMethod = 'relative';
         } catch {
           console.error('❌ No se pudo encontrar package.json');
           return;
@@ -61,14 +79,26 @@ import { PriceChangeMonitor } from './services/PriceChangeMonitor';
       }
     }
     
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/7e4412d0-d04a-4fec-a842-10e1a74a267c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'bot.ts:62',message:'Package detected',data:{packagePath,detectionMethod,packageName:packageJson?.name},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+    // #endregion
+    
     const packageName = packageJson?.name;
+    
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/7e4412d0-d04a-4fec-a842-10e1a74a267c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'bot.ts:66',message:'Package name check',data:{packageName,expectedName:'adrian-arbitrage-bot',isNFTBot:packageName==='nft-arbitrage-bot'||packageName?.includes('nft')},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+    // #endregion
     
     console.log(`Package encontrado: ${packagePath}`);
     console.log(`Package name: ${packageName}`);
+    console.log(`Método de detección: ${detectionMethod}`);
     console.log('========================================\n');
     
     // Si detectamos el NFT bot, fallar INMEDIATAMENTE
     if (packageName === 'nft-arbitrage-bot' || (packageName && packageName.includes('nft'))) {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/7e4412d0-d04a-4fec-a842-10e1a74a267c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'bot.ts:72',message:'NFT bot detected - ERROR',data:{packageName,packagePath,workingDir,scriptPath},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+      // #endregion
       console.error('\n========================================');
       console.error('❌ ERROR CRÍTICO: DETECTADO NFT BOT');
       console.error('========================================');
@@ -91,6 +121,9 @@ import { PriceChangeMonitor } from './services/PriceChangeMonitor';
     
     // Verificar que el package name sea correcto
     if (packageName !== 'adrian-arbitrage-bot') {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/7e4412d0-d04a-4fec-a842-10e1a74a267c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'bot.ts:95',message:'Wrong package name - ERROR',data:{packageName,expectedName:'adrian-arbitrage-bot',packagePath},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
+      // #endregion
       console.error('\n========================================');
       console.error('❌ ERROR: Package name incorrecto');
       console.error('========================================');
@@ -100,6 +133,10 @@ import { PriceChangeMonitor } from './services/PriceChangeMonitor';
       console.error('========================================\n');
       process.exit(1);
     }
+    
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/7e4412d0-d04a-4fec-a842-10e1a74a267c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'bot.ts:105',message:'Bot check passed',data:{packageName,packagePath,detectionMethod},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'G'})}).catch(()=>{});
+    // #endregion
     
     console.log('✅ Verificación de bot correcta\n');
   } catch (error: any) {
