@@ -1,0 +1,333 @@
+import { ethers } from 'ethers';
+import { config, validateConfig } from './config/env';
+import { logger } from './utils/logger';
+import { BotStatus } from './utils/status';
+import { PoolDiscoveryService } from './services/PoolDiscoveryService';
+import { PriceComparisonService } from './services/PriceComparisonService';
+import { SwapService } from './services/SwapService';
+import { ArbitrageService } from './services/ArbitrageService';
+import { EmergencyModeService } from './services/EmergencyModeService';
+import { PriceChangeMonitor } from './services/PriceChangeMonitor';
+
+async function executeArbitrageCycle(
+  discoveryService: PoolDiscoveryService,
+  priceComparisonService: PriceComparisonService,
+  arbitrageService: ArbitrageService,
+  botStatus: BotStatus,
+  emergencyMode: EmergencyModeService,
+  priceChangeMonitor: PriceChangeMonitor,
+  provider: ethers.Provider,
+  signer: ethers.Wallet
+) {
+  try {
+    botStatus.recordCheck();
+    logger.info('=== ADRIAN ARBITRAGE BOT - CICLO DE ARBITRAJE ===\n');
+    
+    // Verificar estado del modo de emergencia
+    const emergencyStatus = emergencyMode.getStatusInfo();
+    if (emergencyStatus.isActive) {
+      logger.warn('🚨 MODO DE EMERGENCIA ACTIVO - Monitoreando pero sin ejecutar trades', {
+        consecutiveFailures: emergencyStatus.consecutiveFailures,
+        lastFailureReason: emergencyStatus.lastFailureReason,
+        totalFailures: emergencyStatus.totalFailures,
+        message: 'Usa el script de reactivación para continuar con las transacciones.',
+      });
+      // Continuar monitoreando pero no ejecutar trades
+    } else if (emergencyStatus.consecutiveFailures > 0) {
+      logger.warn('⚠️ Advertencia: Fallos consecutivos detectados', {
+        consecutiveFailures: emergencyStatus.consecutiveFailures,
+        maxConsecutiveFailures: emergencyStatus.maxConsecutiveFailures,
+        lastFailureReason: emergencyStatus.lastFailureReason,
+      });
+    }
+    
+    // Obtener datos actualizados de pools
+    logger.info('--- Usando pools pre-configurados ---');
+    const poolServices = discoveryService.getPoolServices();
+    
+    // Actualizar PriceComparisonService con pool services actualizados
+    const updatedPriceService = new PriceComparisonService(provider, poolServices);
+    
+    // Actualizar PriceChangeMonitor con pool services actualizados (mantener precios base)
+    (priceChangeMonitor as any).poolServices = poolServices;
+    
+    // Monitorear cambios de precio significativos
+    logger.info('--- Monitoreando cambios de precio ---');
+    const priceChanges = await priceChangeMonitor.detectSignificantPriceChanges();
+    
+    // Log detallado de precios actuales para debug
+    logger.debug('Precios actuales de pools', {
+      pools: Array.from(poolServices.keys()).map(poolId => {
+        const poolService = poolServices.get(poolId);
+        if (poolService) {
+          const poolInfo = (poolService as any).poolInfo;
+          return {
+            poolId,
+            token0: poolInfo?.config?.token0?.substring(0, 10) + '...',
+            token1: poolInfo?.config?.token1?.substring(0, 10) + '...',
+          };
+        }
+        return { poolId };
+      }),
+    });
+    
+    let opportunities: any[] = [];
+    
+    // Si hay cambios significativos, buscar oportunidades con márgenes más permisivos
+    if (priceChanges.size > 0) {
+      logger.info(`⚠️ Detectados ${priceChanges.size} cambio(s) de precio significativo(s)`, {
+        pools: Array.from(priceChanges.keys()),
+      });
+      
+      // Para cada pool con cambio significativo, buscar oportunidades
+      for (const [poolId, changeInfo] of priceChanges.entries()) {
+        logger.info(`Buscando oportunidades después de cambio en ${poolId}`, {
+          changePercent: `${changeInfo.changePercent.toFixed(2)}%`,
+          direction: changeInfo.direction,
+        });
+        
+        const opps = await priceChangeMonitor.detectArbitrageAfterPriceChange(
+          poolId,
+          updatedPriceService
+        );
+        opportunities.push(...opps);
+      }
+    }
+    
+    // También detectar oportunidades normales (por si hay oportunidades que no fueron causadas por cambios recientes)
+    logger.info('--- Detectando oportunidades estándar ---');
+    const standardOpportunities = await updatedPriceService.detectOpportunities(config.minProfitMarginBps);
+    
+    // Combinar oportunidades, priorizando las detectadas después de cambios de precio
+    opportunities = [...opportunities, ...standardOpportunities];
+    
+    // Eliminar duplicados (mismo buyPool y sellPool)
+    const uniqueOpportunities = opportunities.filter((opp, index, self) =>
+      index === self.findIndex((o) => 
+        o.buyPool.config.id === opp.buyPool.config.id &&
+        o.sellPool.config.id === opp.sellPool.config.id
+      )
+    );
+    
+    opportunities = uniqueOpportunities;
+    
+    logger.info(`Oportunidades detectadas: ${opportunities.length}`);
+    
+    if (opportunities.length === 0) {
+      logger.info('No hay oportunidades rentables en este momento');
+      return;
+    }
+    
+    // Filtrar por margen mínimo - usar margen reducido si hay cambios de precio
+    const effectiveMinMargin = priceChanges.size > 0
+      ? Math.max(25, config.minProfitMarginBps / 4) // Reducir a 25% del original si hay cambios
+      : config.minProfitMarginBps;
+    
+    logger.info(`Filtrando oportunidades con margen mínimo: ${effectiveMinMargin} bps (${effectiveMinMargin / 100}%)`, {
+      originalMargin: config.minProfitMarginBps,
+      priceChangesDetected: priceChanges.size,
+    });
+    
+    const profitableOpportunities = updatedPriceService.filterByMinMargin(
+      opportunities,
+      effectiveMinMargin
+    );
+    
+    logger.info(`Oportunidades rentables: ${profitableOpportunities.length}`, {
+      totalDetected: opportunities.length,
+      afterFilter: profitableOpportunities.length,
+      minMarginUsed: effectiveMinMargin,
+    });
+    
+    if (profitableOpportunities.length === 0) {
+      // Log detallado de por qué no hay oportunidades
+      if (opportunities.length > 0) {
+        logger.warn('Oportunidades detectadas pero no rentables', {
+          totalOpportunities: opportunities.length,
+          bestOpportunity: opportunities[0] ? {
+            buyPool: opportunities[0].buyPool.config.id,
+            sellPool: opportunities[0].sellPool.config.id,
+            estimatedProfit: ethers.formatEther(opportunities[0].estimatedProfit),
+            estimatedAmountIn: ethers.formatEther(opportunities[0].estimatedAmountIn),
+            profitMarginBps: Number((opportunities[0].estimatedProfit * 10000n) / opportunities[0].estimatedAmountIn),
+            requiredMargin: effectiveMinMargin,
+          } : null,
+        });
+      } else {
+        logger.info('No hay oportunidades detectadas en este momento');
+      }
+      return;
+    }
+    
+    // Verificar si se pueden ejecutar trades (modo de emergencia)
+    if (!emergencyMode.canExecuteTrades()) {
+      logger.warn('🚨 Modo de emergencia activo - Oportunidades detectadas pero trades pausados', {
+        opportunitiesDetected: profitableOpportunities.length,
+        bestOpportunityProfit: ethers.formatEther(profitableOpportunities[0].estimatedProfit),
+      });
+      return;
+    }
+    
+    // Ejecutar la mejor oportunidad
+    const bestOpportunity = profitableOpportunities[0];
+    
+    // Mostrar información de tamaño de trade si está disponible
+    const tradeSizeInfo = (bestOpportunity as any).tradeSizeInfo;
+    if (tradeSizeInfo) {
+      logger.info('Información de tamaño de trade', {
+        strategy: tradeSizeInfo.strategy,
+        optimalAdrianAmount: ethers.formatEther(BigInt(tradeSizeInfo.optimalAdrianAmount)),
+        minTradeAmount: ethers.formatEther(BigInt(tradeSizeInfo.minTradeAmount)),
+        maxTradeAmount: ethers.formatEther(BigInt(tradeSizeInfo.maxTradeAmount)),
+        riskLevel: tradeSizeInfo.riskLevel,
+      });
+    }
+    
+    logger.info('Ejecutando mejor oportunidad', {
+      buyPool: bestOpportunity.buyPool.config.id,
+      sellPool: bestOpportunity.sellPool.config.id,
+      estimatedProfit: ethers.formatEther(bestOpportunity.estimatedProfit),
+      estimatedAmountIn: bestOpportunity.buyPool.config.token1.toLowerCase() === config.wethAddress.toLowerCase()
+        ? ethers.formatEther(bestOpportunity.estimatedAmountIn)
+        : ethers.formatUnits(bestOpportunity.estimatedAmountIn, 6),
+    });
+    
+    botStatus.recordOpportunity();
+    
+    const result = await arbitrageService.executeArbitrage(bestOpportunity);
+    
+    logger.info('Arbitraje ejecutado exitosamente', {
+      realProfit: ethers.formatEther(result.realProfit),
+      txHash1: result.txHash1,
+      txHash2: result.txHash2,
+    });
+    
+    botStatus.recordExecution(result.realProfit, bestOpportunity.estimatedAmountIn);
+    
+    logger.info('\n=== CICLO COMPLETADO ===');
+    
+  } catch (error: any) {
+    logger.error('Error en ciclo de arbitraje', {
+      error: error.message,
+      stack: error.stack,
+    });
+    botStatus.recordError(error.message);
+    
+    // Si el error es por modo de emergencia, no es un error crítico
+    if (error.message?.includes('MODO DE EMERGENCIA')) {
+      logger.info('El bot continuará monitoreando pero no ejecutará trades hasta reactivación');
+    }
+  }
+}
+
+async function main() {
+  try {
+    logger.info('=== ADRIAN ARBITRAGE BOT - INICIANDO ===');
+    
+    // Validar configuración
+    validateConfig();
+    logger.info('✓ Configuración validada');
+    
+    // Verificar modo
+    if (config.mode === 'test') {
+      logger.warn('⚠️  Bot está en modo TEST. Cambia EXECUTION_MODE=production para ejecutar operaciones reales');
+      logger.warn('Usa "npm run test:detect" para modo de pruebas');
+      process.exit(0);
+    }
+    
+    // Crear provider y signer
+    const provider = new ethers.JsonRpcProvider(config.rpcUrl);
+    const signer = new ethers.Wallet(config.privateKey, provider);
+    logger.info('✓ Provider y signer inicializados', { address: signer.address });
+    
+    // Inicializar servicios
+    const discoveryService = new PoolDiscoveryService(provider);
+    const poolServices = discoveryService.getPoolServices();
+    const priceComparisonService = new PriceComparisonService(provider, poolServices);
+    const swapService = new SwapService(provider, signer, poolServices);
+    
+    // Inicializar modo de emergencia
+    const maxConsecutiveFailures = parseInt(process.env.MAX_CONSECUTIVE_FAILURES || '10', 10);
+    const emergencyMode = new EmergencyModeService(maxConsecutiveFailures);
+    await emergencyMode.initialize();
+    
+    const arbitrageService = new ArbitrageService(provider, signer, swapService, emergencyMode);
+    const botStatus = new BotStatus();
+    
+    // Descubrir pools inicial
+    logger.info('Descubriendo pools iniciales...');
+    await discoveryService.discoverAllPools();
+    
+    // Inicializar monitor de cambios de precio
+    const priceChangeThreshold = parseFloat(process.env.PRICE_CHANGE_THRESHOLD || '0.5'); // 0.5% por defecto
+    const priceChangeMonitor = new PriceChangeMonitor(provider, poolServices, priceChangeThreshold);
+    await priceChangeMonitor.initializePrices();
+    logger.info(`Monitor de cambios de precio inicializado (umbral: ${priceChangeThreshold}%)`);
+    
+    // Manejar señales de cierre graceful
+    let shouldStop = false;
+    process.on('SIGINT', () => {
+      logger.info('Señal SIGINT recibida, deteniendo bot...');
+      shouldStop = true;
+    });
+    process.on('SIGTERM', () => {
+      logger.info('Señal SIGTERM recibida, deteniendo bot...');
+      shouldStop = true;
+    });
+    
+    logger.info(`Iniciando loop principal (intervalo: ${config.executionIntervalSeconds}s)`);
+    logger.info('💡 Presiona Ctrl+C para detener el bot\n');
+    
+    // Loop principal
+    while (!shouldStop) {
+      try {
+        await executeArbitrageCycle(
+          discoveryService,
+          priceComparisonService,
+          arbitrageService,
+          botStatus,
+          emergencyMode,
+          priceChangeMonitor,
+          provider,
+          signer
+        );
+        
+        // Mostrar estadísticas cada 10 ciclos
+        if (botStatus.getStats().totalChecks % 10 === 0) {
+          botStatus.printStatus();
+        }
+        
+      } catch (error: any) {
+        logger.error('Error en loop principal', { error: error.message });
+        botStatus.recordError(error.message);
+      }
+      
+      if (!shouldStop) {
+        logger.debug(`Esperando ${config.executionIntervalSeconds} segundos antes de la siguiente verificación...`);
+        await new Promise(resolve => setTimeout(resolve, config.executionIntervalSeconds * 1000));
+      }
+    }
+    
+    logger.info('Bot deteniéndose...');
+    
+    // Mostrar estadísticas finales
+    logger.info('\n=== ESTADÍSTICAS FINALES ===');
+    botStatus.printStatus();
+    logger.info('=== Bot detenido ===');
+    
+  } catch (error: any) {
+    console.error('❌ ERROR FATAL:', error.message);
+    console.error('Stack:', error.stack);
+    logger.error('Error fatal en bot', { error: error.message, stack: error.stack });
+    process.exit(1);
+  }
+}
+
+if (require.main === module) {
+  main().catch((error) => {
+    console.error('❌ ERROR NO MANEJADO:', error);
+    logger.error('Error no manejado', { error });
+    process.exit(1);
+  });
+}
+
