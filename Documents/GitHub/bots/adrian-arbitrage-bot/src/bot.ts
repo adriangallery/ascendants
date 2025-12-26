@@ -1,3 +1,12 @@
+// ========================================
+// ADRIAN ARBITRAGE BOT - INICIO DEL ARCHIVO
+// ========================================
+console.log('🚀 ADRIAN ARBITRAGE BOT - CARGANDO ARCHIVO bot.ts');
+console.log(`📁 __dirname: ${__dirname}`);
+console.log(`📁 process.cwd(): ${process.cwd()}`);
+console.log(`📁 process.argv[1]: ${process.argv[1]}`);
+console.log('========================================');
+
 import { ethers } from 'ethers';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -10,6 +19,8 @@ import { SwapService } from './services/SwapService';
 import { ArbitrageService } from './services/ArbitrageService';
 import { EmergencyModeService } from './services/EmergencyModeService';
 import { PriceChangeMonitor } from './services/PriceChangeMonitor';
+
+console.log('✅ ADRIAN ARBITRAGE BOT - IMPORTS COMPLETADOS');
 
 // VERIFICACIÓN INMEDIATA: Detectar si estamos ejecutando el bot incorrecto ANTES de cualquier otra cosa
 (function immediateBotCheck() {
