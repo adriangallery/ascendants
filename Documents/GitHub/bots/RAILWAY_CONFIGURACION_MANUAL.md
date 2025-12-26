@@ -15,10 +15,12 @@ Los logs muestran que Railway está ejecutando el **NFT bot** en lugar del **adr
 2. **Settings → Build**
    - **Build Command**: `npm install && npm run build`
    - (Railway ejecutará esto desde `adrian-arbitrage-bot/` porque Root Directory está configurado)
+   - ⚠️ **NO incluyas `cd adrian-arbitrage-bot`** porque Railway ya está en ese directorio
 
 3. **Settings → Deploy**
    - **Start Command**: `node start.js`
    - (Railway ejecutará esto desde `adrian-arbitrage-bot/` porque Root Directory está configurado)
+   - ⚠️ **NO incluyas `cd adrian-arbitrage-bot`** porque Railway ya está en ese directorio
 
 ### Verificación
 
