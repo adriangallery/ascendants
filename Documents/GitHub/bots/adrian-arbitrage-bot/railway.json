@@ -5,13 +5,13 @@
     "buildCommand": "cd adrian-arbitrage-bot && npm install && npm run build"
   },
   "deploy": {
-    "startCommand": "node start-adrian-bot.js",
+    "startCommand": "node ../start-adrian-bot.js",
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10
   },
-  "_comment": "ADRIAN ARBITRAGE BOT - Updated 2025-12-26 22:00 - Usa wrapper desde raíz para evitar conflictos con comandos manuales en Railway UI",
+  "_comment": "ADRIAN ARBITRAGE BOT - Updated 2025-12-26 22:05 - Root Directory debe estar VACÍO. Los comandos incluyen 'cd' porque Railway ejecuta desde la raíz del repo. StartCommand usa el wrapper en la raíz.",
   "_service": "adrian-arbitrage-bot",
   "_botType": "adrian-arbitrage",
-  "_important": "Root Directory en Railway UI debe estar VACÍO. Watch Paths: adrian-arbitrage-bot/**",
-  "_startCommand": "Este comando ejecuta start-adrian-bot.js desde la raíz, que valida y ejecuta el bot correcto"
+  "_important": "Root Directory en Railway UI debe estar VACÍO. Watch Paths: adrian-arbitrage-bot/**. Start Command en Railway UI debe ser: node start-adrian-bot.js",
+  "_critical": "NO uses 'npm run start:prod' en Railway UI - eso ejecuta el bot incorrecto. Usa 'node start-adrian-bot.js'"
 }
